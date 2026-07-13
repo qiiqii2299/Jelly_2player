@@ -11,31 +11,31 @@ public class Double_Jump : MonoBehaviour
     private Rigidbody2D rb;
     private int maxJump = 2;
     public int currentJump = 0;
-    private Animator animator;
+    //private Animator animator;
     public bool Ground = false;
     public WebSwing webSwingScript;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
-        animator = GetComponent<Animator>();
+        //animator = GetComponent<Animator>();
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.gameObject.CompareTag("Ground_"))
+        if (collision.gameObject.CompareTag("Ground"))
         {
             currentJump = 0;
-            animator.SetBool("IsGrounded", true);
+            //animator.SetBool("IsGrounded", true);
             Ground = true;
-            animator.SetBool("Jumping?", false);
+            //animator.SetBool("Jumping?", false);
         }
     }
     void OnCollisionExit2D(Collision2D collision)
     {
-        if (collision.gameObject.CompareTag("Ground_"))
+        if (collision.gameObject.CompareTag("Ground"))
         {
-            animator.SetBool("IsGrounded", false);
+            //animator.SetBool("IsGrounded", false);
             Ground = false;
         }
     }
@@ -53,29 +53,29 @@ public class Double_Jump : MonoBehaviour
             if (Input.GetKey(KeyCode.D))
             {
                 move = 1f;
-                animator.SetBool("Running?", true);
+                //animator.SetBool("Running?", true);
                 transform.localScale = new Vector3(1, 1, 1);
             }
             else if (Input.GetKey(KeyCode.A))
             {
                 move = -1f;
-                animator.SetBool("Running?", true);
+                //animator.SetBool("Running?", true);
                 transform.localScale = new Vector3(-1, 1, 1);
             }
-            else
-            {
-                animator.SetBool("Running?", false);
-            }
+            //else
+            //{
+            //    animator.SetBool("Running?", false);
+            //}
 
             rb.linearVelocity = new Vector2(move * speed, rb.linearVelocity.y);
-            animator.SetFloat("VerticalSpeed", rb.linearVelocity.y);
-            animator.SetFloat("HorizontalSpeed", move);
+            //animator.SetFloat("VerticalSpeed", rb.linearVelocity.y);
+            //animator.SetFloat("HorizontalSpeed", move);
         }
 
         if (Input.GetKeyDown(KeyCode.Space) && currentJump < maxJump)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, JumpForce);
-            animator.SetBool("Jumping?", true);
+            //animator.SetBool("Jumping?", true);
             currentJump++;
         }
     }
