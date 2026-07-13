@@ -1,41 +1,54 @@
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro; // Thư viện để thao tác với TextMeshPro
+using TMPro;
 
 public class LoadingScreenController : MonoBehaviour
 {
     [Header("--- THÀNH PHẦN UI ---")]
-    public Slider loadingBar;               // Thanh Slider
-    public RectTransform characterRect;     // Khung của nhân vật (để nảy)
-    public Image characterImage;            // Hình của nhân vật (để đổi ảnh)
-    public TMP_Text loadingText;            // Chữ Loading 
+    public Slider loadingBar;
+    public RectTransform characterRect;
+    public Image characterImage;
+    public TMP_Text loadingText;
 
     [Header("--- HIỆU ỨNG NHÂN VẬT ---")]
-    public float bounceHeight = 30f;        // Độ cao nảy
-    public float bounceSpeed = 6f;          // Tốc độ nảy
-    public float animFrameRate = 0.1f;      // Tốc độ lật ảnh (càng nhỏ càng nhanh)
-    public Sprite[] characterSprites;       // Danh sách ảnh player_0 đến player_17
+    public float bounceHeight = 30f;
+    public float bounceSpeed = 6f;
+    public float animFrameRate = 0.1f;
+    public Sprite[] characterSprites;
 
     [Header("--- HIỆU ỨNG CHỮ LOADING ---")]
-    public float waveMultiplier = 5f;       // Độ cao của ngọn sóng từng chữ
-    public float speedMultiplier = 4f;      // Tốc độ sóng cuộn
+    public float waveMultiplier = 5f;
+    public float speedMultiplier = 4f;
+
+    [Header("--- CÀI ĐẶT THỜI GIAN ---")]
+    [Tooltip("Thời gian TỐI THIỂU để thanh loading chạy (giây)")]
+    public float minimumLoadTime = 2.5f;
 
     private float charOriginalY;
-    private float textOriginalY;
     private float timer;
     private int currentFrame = 0;
 
+    // Tránh gọi load scene nhiều lần
+    private bool isLoadingStarted = false;
+
     void Start()
     {
-        // Lưu lại vị trí đứng ban đầu của nhân vật và chữ
         if (characterRect != null) charOriginalY = characterRect.anchoredPosition.y;
-        // Reset thanh Loading về 0
         if (loadingBar != null) loadingBar.value = 0f;
+
+        // Phục hồi frame ảnh cũ từ SceneLoader (để mượt mà khi đổi scene)
+        currentFrame = SceneLoader.lastLoadingFrame;
+
+        if (characterSprites != null && characterSprites.Length > 0)
+        {
+            if (currentFrame >= characterSprites.Length) currentFrame = 0;
+            if (characterImage != null) characterImage.sprite = characterSprites[currentFrame];
+        }
     }
 
     void Update()
     {
-        // 1. Hoạt hình nhân vật
+        // 1. Hoạt hình nhân vật & Lưu frame lên Đám mây
         if (characterSprites.Length > 0 && characterImage != null)
         {
             timer += Time.deltaTime;
@@ -44,16 +57,8 @@ public class LoadingScreenController : MonoBehaviour
                 timer = 0f;
                 currentFrame = (currentFrame + 1) % characterSprites.Length;
                 characterImage.sprite = characterSprites[currentFrame];
-            }
-        }
-        {
-            timer += Time.deltaTime;
-            if (timer >= animFrameRate)
-            {
-                timer = 0f;
-                // Chuyển frame, nếu đến hình cuối thì quay lại hình 0
-                currentFrame = (currentFrame + 1) % characterSprites.Length;
-                characterImage.sprite = characterSprites[currentFrame];
+
+                SceneLoader.lastLoadingFrame = currentFrame;
             }
         }
 
@@ -63,51 +68,30 @@ public class LoadingScreenController : MonoBehaviour
             float newCharY = charOriginalY + Mathf.Abs(Mathf.Sin(Time.time * bounceSpeed)) * bounceHeight;
             characterRect.anchoredPosition = new Vector2(characterRect.anchoredPosition.x, newCharY);
         }
-        {
-            // Dùng Mathf.Abs để nhân vật chạm đất rồi nảy lên
-            float newCharY = charOriginalY + Mathf.Abs(Mathf.Sin(Time.time * bounceSpeed)) * bounceHeight;
-            characterRect.anchoredPosition = new Vector2(characterRect.anchoredPosition.x, newCharY);
-        }
 
-        // 3. Thanh Loading giả lập
-        if (loadingBar != null && loadingBar.value < 1f)
-        {
-            loadingBar.value += Time.deltaTime * 0.2f;
-        }
-
-        // 4. LƯỢN SÓNG TỪNG CHỮ CÁI (TEXTMESHPRO)
+        // 3. LƯỢN SÓNG TỪNG CHỮ CÁI (TEXTMESHPRO)
         if (loadingText != null)
         {
-            // Bắt buộc TMP cập nhật lưới (mesh) trước khi ta bẻ cong nó
             loadingText.ForceMeshUpdate();
-
-            // Lấy dữ liệu các chữ cái
             TMP_TextInfo textInfo = loadingText.textInfo;
 
             for (int i = 0; i < textInfo.characterCount; i++)
             {
-                // Lấy thông tin của từng ký tự
                 TMP_CharacterInfo charInfo = textInfo.characterInfo[i];
-
-                // Nếu là khoảng trắng (space), bỏ qua không làm lượn sóng
                 if (!charInfo.isVisible) continue;
 
-                // Lấy vị trí 4 đỉnh (vertex) tạo nên 1 chữ cái đó
                 int vertexIndex = charInfo.vertexIndex;
                 int materialIndex = charInfo.materialReferenceIndex;
                 Vector3[] vertices = textInfo.meshInfo[materialIndex].vertices;
 
-                // Tính toán độ lượn sóng: Dựa vào thời gian (Time.time) và vị trí chữ (i) để tạo sóng đuổi nhau
                 Vector3 offset = new Vector3(0, Mathf.Sin(Time.time * speedMultiplier + i) * waveMultiplier, 0);
 
-                // Di chuyển 4 góc của chữ cái đó lên/xuống theo sóng
-                vertices[vertexIndex + 0] += offset; // Góc dưới trái
-                vertices[vertexIndex + 1] += offset; // Góc trên trái
-                vertices[vertexIndex + 2] += offset; // Góc trên phải
-                vertices[vertexIndex + 3] += offset; // Góc dưới phải
+                vertices[vertexIndex + 0] += offset;
+                vertices[vertexIndex + 1] += offset;
+                vertices[vertexIndex + 2] += offset;
+                vertices[vertexIndex + 3] += offset;
             }
 
-            // Sau khi bẻ cong xong, cập nhật lại hình ảnh chữ lên màn hình
             for (int i = 0; i < textInfo.materialCount; i++)
             {
                 if (textInfo.meshInfo[i].mesh != null)
@@ -116,10 +100,54 @@ public class LoadingScreenController : MonoBehaviour
                     loadingText.UpdateGeometry(textInfo.meshInfo[i].mesh, i);
                 }
             }
+        }
+
+        // 4. BẮT ĐẦU TẢI SCENE THẬT 
+        if (!isLoadingStarted)
+        {
+            isLoadingStarted = true;
+
+            if (!string.IsNullOrEmpty(SceneLoader.targetSceneName))
             {
-                // Tốc độ thanh loading đầy (Thay đổi số 0.2f để nhanh/chậm hơn)
-                loadingBar.value += Time.deltaTime * 0.2f;
+                StartCoroutine(LoadSceneAsyncCoroutine(SceneLoader.targetSceneName));
             }
+            else
+            {
+                Debug.LogWarning("Không có tên Scene đích đến!");
+            }
+        }
+    }
+
+    // Coroutine xử lý tải ngầm và đồng bộ thanh tiến trình
+    private System.Collections.IEnumerator LoadSceneAsyncCoroutine(string targetScene)
+    {
+        UnityEngine.AsyncOperation operation = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(targetScene);
+        operation.allowSceneActivation = false; // Chặn chuyển cảnh đột ngột
+
+        float timeElapsed = 0f;
+
+        while (!operation.isDone)
+        {
+            timeElapsed += Time.deltaTime;
+
+            float realProgress = Mathf.Clamp01(operation.progress / 0.9f);
+            float fakeProgress = Mathf.Clamp01(timeElapsed / minimumLoadTime);
+
+            // Ép thanh Loading chạy từ từ theo fakeProgress
+            float displayProgress = Mathf.Min(realProgress, fakeProgress);
+
+            if (loadingBar != null)
+            {
+                loadingBar.value = displayProgress;
+            }
+
+            // Chuyển cảnh khi load xong data VÀ đủ thời gian làm màu
+            if (operation.progress >= 0.9f && timeElapsed >= minimumLoadTime)
+            {
+                operation.allowSceneActivation = true;
+            }
+
+            yield return null;
         }
     }
 }

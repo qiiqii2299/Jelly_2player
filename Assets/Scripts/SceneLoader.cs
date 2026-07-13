@@ -1,18 +1,19 @@
 using UnityEngine.SceneManagement;
 
-// Lưu ý: Lớp static không thể gắn vào Game Object
+// Lớp static tồn tại toàn cục, KHÔNG gắn vào GameObject
 public static class SceneLoader
 {
-    // Biến này sẽ lưu tên của Scene mà người chơi muốn đi tới
+    // Tên Scene đích đến
     public static string targetSceneName;
 
-    // Hàm này được gọi từ các nút bấm (Button)
+    // Lưu frame hoạt hình dở dang để nối tiếp nhịp màn Loading
+    public static int lastLoadingFrame = 0;
+
     public static void LoadNextScene(string sceneName)
     {
-        // 1. Ghi nhớ điểm đến vào "đám mây"
         targetSceneName = sceneName;
 
-        // 2. Tải màn hình Loading (Luôn luôn qua LoadingScene trước)
+        // Luôn chuyển qua LoadingScene làm bước đệm
         SceneManager.LoadScene("LoadingScene");
     }
 }
