@@ -4,10 +4,10 @@ using UnityEngine;
 public class WebSwing : MonoBehaviour
 {
     public LayerMask AttachableLayers;
-    public float maxWebDistance = 15f;
+    public float maxWebDistance = 5f;
     public float minWebDistance = 2f;
     public float swingForce = 1f;
-    public float normalJumpForce = 7f;
+    public float normalJumpForce = 5f;
     public LineRenderer webLine;
     public Transform webOrigin;
     private DistanceJoint2D webJoint;

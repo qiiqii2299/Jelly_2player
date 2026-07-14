@@ -6,8 +6,8 @@ using System.Collections;
 public class Double_Jump : MonoBehaviour
 {
 
-    public float speed = 7f;
-    public float JumpForce = 17f;
+    public float speed = 5f;
+    public float JumpForce = 5f;
     private Rigidbody2D rb;
     private int maxJump = 2;
     public int currentJump = 0;

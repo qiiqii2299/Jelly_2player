@@ -5,7 +5,7 @@ public class NewMonoBehaviourScript : MonoBehaviour
 {
     private Rigidbody2D rb;
     public float speed = 5f;
-    public float jumpForce = 10f;
+    public float jumpForce = 5f;
     private int maxJumpCount = 1;
     private int jumpCount = 0;
     
