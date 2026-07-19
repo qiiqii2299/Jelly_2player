@@ -12,12 +12,12 @@ TagManager:
   - HookPoint
   - Water
   - UI
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
+  - Background_Far
+  - Background_Near
+  - Ground
+  - Interactables
+  - Player
+  - Foreground
   - 
   - 
   - 
