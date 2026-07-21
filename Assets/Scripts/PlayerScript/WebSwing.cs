@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+
 public class WebSwing : MonoBehaviour
 {
     public LayerMask AttachableLayers;
@@ -16,13 +17,11 @@ public class WebSwing : MonoBehaviour
     public Double_Jump jumpScript;
     public bool isSwinging = false;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
     }
 
-    // Update is called once per frame
     void Update()
     {
         HandleWebShooting();
@@ -40,6 +39,7 @@ public class WebSwing : MonoBehaviour
             rb.linearDamping = 0f;
         }
     }
+
     void HandleWebShooting()
     {
         if (jumpScript.Ground || isSwinging)
@@ -88,7 +88,6 @@ public class WebSwing : MonoBehaviour
         }
     }
 
-
     void HandleWebRelease()
     {
         if (Input.GetKeyDown(KeyCode.Space) && webJoint != null)
@@ -100,18 +99,21 @@ public class WebSwing : MonoBehaviour
             ApplyReleaseJump();
         }
     }
+
     void ApplyReleaseJump()
     {
         Vector2 jumpForce = new Vector2(rb.linearVelocity.x, normalJumpForce);
         rb.AddForce(jumpForce, ForceMode2D.Impulse);
         jumpScript.ResetJumpCount();
     }
+
     void DrawWebLine()
     {
         webLine.positionCount = 2;
         webLine.SetPosition(0, webOrigin.position);
         webLine.SetPosition(1, webAttachPoint);
     }
+
     void ClearWebLine()
     {
         webLine.positionCount = 0;
@@ -124,5 +126,4 @@ public class WebSwing : MonoBehaviour
             DrawWebLine();
         }
     }
-
 }
