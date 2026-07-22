@@ -9,25 +9,22 @@ public class FlagTrigger : MonoBehaviour
         // Kiểm tra xem đối tượng va chạm có phải là Player không
         if (collision.CompareTag("Player") && !hasFinished)
         {
+            float playerX = collision.transform.position.x;
+            float flagX = transform.position.x;
+
+            // Kiểm tra xem người chạm cờ là Batman hay Spider-Man
             BatmanController batman = collision.GetComponent<BatmanController>();
-            if (batman != null)
+            SpiderManController spiderMan = collision.GetComponent<SpiderManController>();
+
+            // Nếu một trong hai nhân vật tồn tại và lao tới từ bên trái sang phải
+            if ((batman != null || spiderMan != null) && playerX < flagX)
             {
-                // ĐIỀU KIỆN CHỐNG ĂN GIAN:
-                // 1. Nhân vật phải đang quay mặt/di chuyển hướng sang phải (currentDirection > 0)
-                // 2. Hoặc kiểm tra vị trí X của Player phải nhỏ hơn vị trí X của cờ (lao từ trái sang phải)
-
-                float playerX = batman.transform.position.x;
-                float flagX = transform.position.x;
-
-                if (playerX < flagX)
-                {
-                    hasFinished = true;
-                    WinGame();
-                }
-                else
-                {
-                    Debug.Log("Đang tiếp cận cờ từ phía sau (chạy ngược chiều)! Không tính thắng.");
-                }
+                hasFinished = true;
+                WinGame();
+            }
+            else if (batman != null || spiderMan != null)
+            {
+                Debug.Log("Đang tiếp cận cờ từ phía sau (chạy ngược chiều)! Không tính thắng.");
             }
         }
     }

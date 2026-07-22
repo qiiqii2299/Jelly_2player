@@ -7,19 +7,26 @@ public class SpiderManController : PlayerBase
     public GameObject webEffectPrefab;
     public GameObject webDartPrefab;
 
-    [Header("Vật lý tơ nhện")]
+    [Header("Vật lý tơ nhện & Đu đưa")]
     public float maxWebDistance = 15f;
     public LayerMask webLayer;
+    public float swingForce = 20f; // Lực đẩy qua lại khi bấm phím A/D
+
+    [Header("Cấu hình Thu ngắn dây (Giống Batman)")]
+    public float climbSpeed = 4f;      // Tốc độ tự động thu ngắn dây
+    public float minRopeLength = 1.5f; // Chiều dài dây ngắn nhất có thể rút
 
     private DistanceJoint2D distanceJoint;
     private LineRenderer lineRenderer;
     private GameObject activeWebDart;
+    private Animator animator; // Biến quản lý Animator để gọi hiệu ứng lật mặt
 
     protected override void Start()
     {
         base.Start();
         distanceJoint = GetComponent<DistanceJoint2D>();
         lineRenderer = GetComponent<LineRenderer>();
+        animator = GetComponent<Animator>(); // Lấy component Animator trên nhân vật
     }
 
     protected override void HandleSkillInput()
@@ -31,18 +38,70 @@ public class SpiderManController : PlayerBase
             return;
         }
 
-        // 2. BẤM CHUỘT TRÁI: 
-        // - Bấm lần 1: Bắn tơ găm vào vị trí trỏ chuột và giữ lại cố định.
-        // - Bấm lần 2 (đang bám mà bấm chỗ khác): Ngắt tơ cũ, lập tức chuyển sang điểm mới.
+        // 2. BẤM CHUỘT TRÁI: Bắn tơ găm vào vị trí trỏ chuột (có thể bấm lần 2 để đổi điểm bám)
         if (Input.GetMouseButtonDown(0))
         {
             ShootWebToCursor();
         }
 
-        // Nếu đang bám tơ, khóa vận tốc tuyệt đối để nhân vật đứng yên trên không/tường
+        // 3. XỬ LÝ KHI ĐANG BÁM TƠ: Tự động thu ngắn dây và cho phép đung đưa
         if (isGrappling)
         {
-            rb.linearVelocity = Vector2.zero;
+            // Tự động thu ngắn dây kéo nhân vật lại gần điểm bám (giống Batman)
+            if (distanceJoint.distance > minRopeLength)
+            {
+                distanceJoint.distance -= climbSpeed * Time.deltaTime;
+            }
+
+            // Đánh đu qua lại bằng phím A/D hoặc mũi tên trái/phải
+            float swingInput = Input.GetAxisRaw("Horizontal");
+            if (swingInput != 0)
+            {
+                // Thêm lực đẩy ngang để tạo đà văng qua văng lại
+                rb.AddForce(new Vector2(swingInput * swingForce, 0f));
+
+                // Xoay hướng mặt và gọi animation lật mặt
+                UpdateFacingDirection(swingInput);
+            }
+        }
+        else
+        {
+            // 4. XỬ LÝ KHI DI CHUYỂN BÌNH THƯỜNG (NGOÀI LÚC BÁM TƠ): Vẫn nhận phím A/D để lật mặt + animation
+            float moveInput = Input.GetAxisRaw("Horizontal");
+            if (moveInput != 0)
+            {
+                UpdateFacingDirection(moveInput);
+            }
+        }
+    }
+
+    // Hàm chung xử lý hướng mặt và gọi Animation Turn cho cả lúc bám tơ lẫn lúc đi bình thường
+    private void UpdateFacingDirection(float inputDirection)
+    {
+        if (inputDirection > 0)
+        {
+            if (transform.rotation.eulerAngles.y != 0) // Chỉ lật khi đổi hướng thực sự
+            {
+                transform.rotation = Quaternion.Euler(0, 0, 0);
+                TriggerFlipAnimation();
+            }
+        }
+        else if (inputDirection < 0)
+        {
+            if (transform.rotation.eulerAngles.y != 180) // Chỉ lật khi đổi hướng thực sự
+            {
+                transform.rotation = Quaternion.Euler(0, 180, 0);
+                TriggerFlipAnimation();
+            }
+        }
+    }
+
+    // Hàm kích hoạt animation lật mặt an toàn
+    private void TriggerFlipAnimation()
+    {
+        if (animator != null)
+        {
+            animator.SetTrigger("Turn"); // Kích hoạt Trigger "Turn" trong Animator Controller
         }
     }
 
@@ -51,10 +110,10 @@ public class SpiderManController : PlayerBase
         // Lấy tọa độ chuột chính xác trong thế giới game
         Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 
-        // Lấy vị trí tâm nhân vật (nhích lên ngực một chút) làm gốc xuất phát để không bị lệch hướng khi lật mặt
-        Vector2 originPos = (Vector2)transform.position + new Vector2(0f, 0.5f);
+        // Lấy gốc xuất phát từ vị trí thực tế của firePoint (ở tay nhân vật)
+        Vector2 originPos = firePoint != null ? (Vector2)firePoint.position : (Vector2)transform.position;
 
-        // Tính vector hướng chuẩn xác từ nhân vật tới vị trí chuột
+        // Tính vector hướng chuẩn xác từ tay nhân vật tới vị trí chuột
         Vector2 fireDirection = (mousePos - originPos).normalized;
 
         // Bắn Raycast theo đúng hướng chuột với tầm với maxWebDistance
@@ -75,20 +134,22 @@ public class SpiderManController : PlayerBase
     private void StartWebShoot(Vector2 hitPoint)
     {
         isGrappling = true;
-        rb.linearVelocity = Vector2.zero;
-        rb.bodyType = RigidbodyType2D.Kinematic; // Khóa vật lý động để giữ nhân vật đứng yên bất động
 
-        // Tạo hiệu ứng chớp sáng khi tơ dính vào tường (tự hủy sau 0.5s tránh tràn bộ nhớ)
+        // GIỮ VẬT LÝ DYNAMIC: Để nhân vật có trọng lực và văng được, không dùng Kinematic nữa
+        rb.bodyType = RigidbodyType2D.Dynamic;
+
+        // Tạo hiệu ứng chớp sáng khi tơ dính vào tường (tự hủy sau 0.5s)
         if (webEffectPrefab != null)
         {
             GameObject effect = Instantiate(webEffectPrefab, hitPoint, Quaternion.identity);
             Destroy(effect, 0.5f);
         }
 
-        // Cấu hình khoảng cách dây
+        // Cấu hình khoảng cách dây xuất phát từ firePoint
+        Vector2 originPos = firePoint != null ? (Vector2)firePoint.position : (Vector2)transform.position;
         distanceJoint.enabled = true;
         distanceJoint.connectedAnchor = hitPoint;
-        distanceJoint.distance = Vector2.Distance((Vector2)transform.position + new Vector2(0f, 0.5f), hitPoint);
+        distanceJoint.distance = Vector2.Distance(originPos, hitPoint) * 0.9f; // Thu ngắn một chút để tạo độ căng cho dây
 
         // Bật hiển thị sợi tơ
         lineRenderer.enabled = true;
@@ -109,7 +170,7 @@ public class SpiderManController : PlayerBase
     private void StopWebShoot()
     {
         isGrappling = false;
-        rb.bodyType = RigidbodyType2D.Dynamic; // Trả lại vật lý thông thường cho nhân vật
+        rb.bodyType = RigidbodyType2D.Dynamic;
 
         if (distanceJoint != null && distanceJoint.enabled)
         {
@@ -123,7 +184,7 @@ public class SpiderManController : PlayerBase
         }
     }
 
-    // Ngắt tơ ngầm không đổi BodyType (Dùng khi chuyển đổi điểm bám liên tục)
+    // Ngắt tơ ngầm không ngắt trạng thái đu (Dùng khi chuyển đổi điểm bám liên tục)
     private void StopWebShootQuietly()
     {
         if (distanceJoint != null && distanceJoint.enabled)
@@ -140,10 +201,10 @@ public class SpiderManController : PlayerBase
 
     private void LateUpdate()
     {
-        // Cập nhật co giãn vị trí 2 đầu sợi tơ liên tục theo chuyển động của nhân vật
+        // Cập nhật co giãn vị trí 2 đầu sợi tơ bám chính xác từ firePoint tới điểm neo
         if (lineRenderer.enabled)
         {
-            Vector2 startPos = (Vector2)transform.position + new Vector2(0f, 0.5f);
+            Vector2 startPos = firePoint != null ? (Vector2)firePoint.position : (Vector2)transform.position;
             lineRenderer.SetPosition(0, startPos);
             lineRenderer.SetPosition(1, distanceJoint.connectedAnchor);
         }
