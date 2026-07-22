@@ -139,7 +139,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &26977594
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -456,7 +456,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fd6d09ae510820843831fbe013cbce1f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraFollowPlayer
-  target: {fileID: 26977597}
+  target: {fileID: 914850710}
   followSpeed: 5
   v3: {x: 0, y: 0, z: 0}
 --- !u!114 &372787847
@@ -990,7 +990,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!50 &914850707
 Rigidbody2D:
   serializedVersion: 5
@@ -1114,7 +1114,7 @@ SpriteRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: 7388399842426930641, guid: 3b5b64b2a9c14d747afad094c898b889, type: 3}
-  m_Color: {r: 0.8867924, g: 0.6133199, b: 0.10457456, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0

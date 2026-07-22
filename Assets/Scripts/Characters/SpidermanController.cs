@@ -24,27 +24,38 @@ public class SpiderManController : PlayerBase
     protected override void Start()
     {
         base.Start();
+
+        // Tự tạo DistanceJoint2D nếu chưa có trên object
         distanceJoint = GetComponent<DistanceJoint2D>();
+        if (distanceJoint == null)
+            distanceJoint = gameObject.AddComponent<DistanceJoint2D>();
+        distanceJoint.enabled = false;
+        distanceJoint.enableCollision = true;
+
         lineRenderer = GetComponent<LineRenderer>();
-        animator = GetComponent<Animator>(); // Lấy component Animator trên nhân vật
+        if (lineRenderer == null)
+            lineRenderer = gameObject.AddComponent<LineRenderer>();
+        lineRenderer.enabled = false;
+        lineRenderer.startWidth = 0.05f;
+        lineRenderer.endWidth   = 0.05f;
+        lineRenderer.positionCount = 2;
+
+        animator = GetComponent<Animator>();
     }
 
     protected override void HandleSkillInput()
     {
-        // 1. BẤM CHUỘT PHẢI: Buông tơ hoàn toàn, trả lại trạng thái di chuyển/rơi bình thường
-        if (Input.GetMouseButtonDown(1))
+        // 1. BẤM SPACE: Nếu đang đu → thả tơ. Nếu không → bắn tơ vào vị trí chuột
+        if (Input.GetKeyDown(KeyCode.Space))
         {
-            StopWebShoot();
+            if (isGrappling)
+                StopWebShoot();
+            else
+                ShootWebToCursor();
             return;
         }
 
-        // 2. BẤM CHUỘT TRÁI: Bắn tơ găm vào vị trí trỏ chuột (có thể bấm lần 2 để đổi điểm bám)
-        if (Input.GetMouseButtonDown(0))
-        {
-            ShootWebToCursor();
-        }
-
-        // 3. XỬ LÝ KHI ĐANG BÁM TƠ: Tự động thu ngắn dây và cho phép đung đưa
+        // 2. XỬ LÝ KHI ĐANG BÁM TƠ: Tự động thu ngắn dây và cho phép đung đưa
         if (isGrappling)
         {
             // Tự động thu ngắn dây kéo nhân vật lại gần điểm bám (giống Batman)
@@ -53,25 +64,20 @@ public class SpiderManController : PlayerBase
                 distanceJoint.distance -= climbSpeed * Time.deltaTime;
             }
 
-            // Đánh đu qua lại bằng phím A/D hoặc mũi tên trái/phải
+            // Đánh đu qua lại bằng phím mũi tên trái/phải
             float swingInput = Input.GetAxisRaw("Horizontal");
             if (swingInput != 0)
             {
-                // Thêm lực đẩy ngang để tạo đà văng qua văng lại
                 rb.AddForce(new Vector2(swingInput * swingForce, 0f));
-
-                // Xoay hướng mặt và gọi animation lật mặt
                 UpdateFacingDirection(swingInput);
             }
         }
         else
         {
-            // 4. XỬ LÝ KHI DI CHUYỂN BÌNH THƯỜNG (NGOÀI LÚC BÁM TƠ): Vẫn nhận phím A/D để lật mặt + animation
+            // 3. KHI DI CHUYỂN BÌNH THƯỜNG: lật mặt theo phím
             float moveInput = Input.GetAxisRaw("Horizontal");
             if (moveInput != 0)
-            {
                 UpdateFacingDirection(moveInput);
-            }
         }
     }
 
@@ -116,8 +122,10 @@ public class SpiderManController : PlayerBase
         // Tính vector hướng chuẩn xác từ tay nhân vật tới vị trí chuột
         Vector2 fireDirection = (mousePos - originPos).normalized;
 
-        // Bắn Raycast theo đúng hướng chuột với tầm với maxWebDistance
-        RaycastHit2D hit = Physics2D.Raycast(originPos, fireDirection, maxWebDistance, webLayer);
+        // Bắn Raycast — nếu webLayer chưa set thì bắn vào tất cả
+        RaycastHit2D hit = webLayer != 0
+            ? Physics2D.Raycast(originPos, fireDirection, maxWebDistance, webLayer)
+            : Physics2D.Raycast(originPos, fireDirection, maxWebDistance);
 
         if (hit.collider != null)
         {
