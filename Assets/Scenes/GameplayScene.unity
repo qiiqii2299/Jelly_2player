@@ -167,8 +167,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2ad41dfd416070fc38a446cd4d716aba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NewMonoBehaviourScript
-  speed: 5
-  jumpForce: 5
 --- !u!212 &26977596
 SpriteRenderer:
   serializedVersion: 2
@@ -438,7 +436,7 @@ Transform:
   m_GameObject: {fileID: 372787842}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 5.65, y: -1.65, z: -10}
+  m_LocalPosition: {x: 0.38999987, y: -0.42, z: -11.34}
   m_LocalScale: {x: 0.54922, y: 0.54922, z: 0.54922}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1132,7 +1130,7 @@ Transform:
   m_GameObject: {fileID: 914850706}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.39, y: -0.42, z: 0}
+  m_LocalPosition: {x: 0.39, y: -0.42, z: -1.34}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1256,16 +1254,12 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 914850706}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 951a0b80b70cdb740b7cd6f704e00712, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Double_Jump
-  speed: 5
-  JumpForce: 5
-  currentJump: 0
   Ground: 0
-  webSwingScript: {fileID: 914850714}
 --- !u!114 &914850714
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1278,17 +1272,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: abb5745b40a355c4986c5a423d6583f6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WebSwing
-  AttachableLayers:
-    serializedVersion: 2
-    m_Bits: 8
+  webOrigin: {fileID: 1404915223}
   maxWebDistance: 5
   minWebDistance: 2
+  attachableLayers:
+    serializedVersion: 2
+    m_Bits: 256
+  scanAngle: 45
   swingForce: 1
-  normalJumpForce: 5
-  webLine: {fileID: 914850712}
-  webOrigin: {fileID: 1404915223}
-  jumpScript: {fileID: 914850713}
-  isSwinging: 0
+  prefab_hitWebEffect: {fileID: 8284729932050985130, guid: 784ff71265f14234d82c60c35790810e, type: 3}
+  prefab_WebDart: {fileID: 3463214912566407697, guid: 2ecd13a48147ebe4d898de2f79f6fb92, type: 3}
 --- !u!114 &914850715
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1298,11 +1291,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 914850706}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2ad41dfd416070fc38a446cd4d716aba, type: 3}
+  m_Script: {fileID: 11500000, guid: 0277494cb2d364040be14de77246a7cf, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::NewMonoBehaviourScript
-  speed: 5
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerBase
+  moveSpeed: 5
   jumpForce: 5
+  isAutoRun: 1
+  groundCheck: {fileID: 914850710}
+  groundCheckRadius: 0.2
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 256
 --- !u!1 &966043175
 GameObject:
   m_ObjectHideFlags: 0
@@ -1408,8 +1407,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2ad41dfd416070fc38a446cd4d716aba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NewMonoBehaviourScript
-  speed: 5
-  jumpForce: 5
 --- !u!114 &966043179
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2241,7 +2238,7 @@ MonoBehaviour:
   m_StreamingVersion: 20241001
   m_LegacyPriority: 0
   Target:
-    TrackingTarget: {fileID: 0}
+    TrackingTarget: {fileID: 914850710}
     LookAtTarget: {fileID: 0}
     CustomLookAtTarget: 0
   Lens:
@@ -2273,7 +2270,7 @@ Transform:
   m_GameObject: {fileID: 1090859306}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 5.65, y: -1.65, z: -10}
+  m_LocalPosition: {x: 0.39, y: -0.42, z: -11.34}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

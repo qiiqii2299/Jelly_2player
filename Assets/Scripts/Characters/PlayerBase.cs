@@ -4,7 +4,7 @@ public class PlayerBase : MonoBehaviour
 {
     [Header("Di chuyển cơ bản")]
     public float moveSpeed = 5f;
-    public float jumpForce = 12f;
+    public float jumpForce = 5f;
     public bool isAutoRun = true; // Bật/tắt chế độ tự động chạy
 
     // BIẾN MỚI: Lưu giữ hướng chạy cuối cùng (1 = Phải, -1 = Trái)

@@ -123,6 +123,8 @@ public class WebSwing : MonoBehaviour
         if (prefab_hitWebEffect != null)
         {
             GameObject fx = Instantiate(prefab_hitWebEffect, attachPoint, Quaternion.identity);
+            // Đảm bảo hiển thị trên foreground
+            SetSortingOrder(fx, 20);
             Destroy(fx, 0.5f);
         }
 
@@ -135,6 +137,7 @@ public class WebSwing : MonoBehaviour
                 activeDart.transform.position = attachPoint;
                 activeDart.SetActive(true);
             }
+            SetSortingOrder(activeDart, 20);
         }
     }
 
@@ -169,6 +172,23 @@ public class WebSwing : MonoBehaviour
         Vector2 start = webOrigin != null ? (Vector2)webOrigin.position : (Vector2)transform.position;
         lineRenderer.SetPosition(0, start);
         lineRenderer.SetPosition(1, attachPoint);
+
+        // Cập nhật vị trí WebDart giữa throw point và điểm bám
+        if (activeDart != null)
+        {
+            activeDart.transform.position = Vector2.Lerp(start, attachPoint, 0.5f);
+            // Xoay WebDart theo hướng dây
+            Vector2 dir = attachPoint - start;
+            float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+            activeDart.transform.rotation = Quaternion.Euler(0, 0, angle);
+        }
+    }
+
+    // Đặt sorting order cho tất cả SpriteRenderer trong object
+    void SetSortingOrder(GameObject obj, int order)
+    {
+        foreach (var sr in obj.GetComponentsInChildren<SpriteRenderer>())
+            sr.sortingOrder = order;
     }
 
     // Vẽ hướng quét trong Scene view để dễ debug
