@@ -40,9 +40,6 @@ public class Double_Jump : MonoBehaviour
         }
     }
 
-
-
-
     // Update is called once per frame
     void Update()
     {
@@ -62,20 +59,13 @@ public class Double_Jump : MonoBehaviour
                 //animator.SetBool("Running?", true);
                 transform.localScale = new Vector3(-1, 1, 1);
             }
-            //else
-            //{
-            //    animator.SetBool("Running?", false);
-            //}
 
             rb.linearVelocity = new Vector2(move * speed, rb.linearVelocity.y);
-            //animator.SetFloat("VerticalSpeed", rb.linearVelocity.y);
-            //animator.SetFloat("HorizontalSpeed", move);
         }
 
         if (Input.GetKeyDown(KeyCode.Space) && currentJump < maxJump)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, JumpForce);
-            //animator.SetBool("Jumping?", true);
             currentJump++;
         }
     }

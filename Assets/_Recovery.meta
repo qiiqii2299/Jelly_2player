@@ -1,5 +1,9 @@
 fileFormatVersion: 2
+<<<<<<< HEAD
+guid: bcf59b095b74b087b86389469b05fa97
+=======
 guid: b45b1843ab520b443829c5c23f07c331
+>>>>>>> epic/core-system
 folderAsset: yes
 DefaultImporter:
   externalObjects: {}
