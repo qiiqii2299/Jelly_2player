@@ -17,6 +17,7 @@ public class PlayerBase : MonoBehaviour
 
     protected bool isGrounded;
     protected bool isGrappling = false;
+    private bool canJump = true;
 
     protected Rigidbody2D rb;
     protected Animator anim;
@@ -44,65 +45,59 @@ public class PlayerBase : MonoBehaviour
     protected void CheckGrounded()
     {
         bool wasGrounded = isGrounded;
-        // Kiểm tra xem nhân vật có đang đứng trên đất không
-        isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
 
-        // VỪA CHẠM ĐẤT: Triệt tiêu ngay lập tức lực rơi (y) để ngăn triệt để hiện tượng nảy/tưng
+        if (groundCheck != null && groundLayer != 0)
+        {
+            // Dùng OverlapCircle nếu đã gán groundCheck và groundLayer
+            isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
+        }
+        else
+        {
+            // Fallback: coi là đang đứng đất khi vận tốc y gần 0 và đang rơi/đứng yên
+            isGrounded = Mathf.Abs(rb.linearVelocity.y) < 0.05f;
+        }
+
         if (!wasGrounded && isGrounded)
         {
             if (rb.linearVelocity.y < 0)
-            {
                 rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
-            }
         }
     }
 
     protected void HandleMovement()
     {
-        float moveInput = Input.GetAxisRaw("Horizontal");
+        float moveInput = 0f;
+        if (Input.GetKey(KeyCode.RightArrow)) moveInput = 1f;
+        else if (Input.GetKey(KeyCode.LeftArrow)) moveInput = -1f;
 
-        // 1. CẬP NHẬT HƯỚNG ĐI DỰA TRÊN PHÍM BẤM
-        if (moveInput > 0)
-        {
-            currentDirection = 1f;
-        }
-        else if (moveInput < 0)
-        {
-            currentDirection = -1f;
-        }
+        // Cập nhật hướng nhìn khi có phím bấm
+        if (moveInput > 0) currentDirection = 1f;
+        else if (moveInput < 0) currentDirection = -1f;
 
-        // 2. TÍNH TOÁN TỐC ĐỘ 
-        float currentSpeed = 0f;
-        if (isAutoRun)
-        {
-            currentSpeed = currentDirection * moveSpeed;
-        }
-        else
-        {
-            currentSpeed = moveInput * moveSpeed;
-        }
+        float currentSpeed = moveInput * moveSpeed;
 
-        // 3. ÁP DỤNG LỰC DI CHUYỂN
         rb.linearVelocity = new Vector2(currentSpeed, rb.linearVelocity.y);
 
-        // 4. LẬT MẶT BẰNG CÁCH XOAY TRỤC Y (Tránh lỗi Animator đè Scale)
+        // Lật mặt
         if (currentDirection > 0)
-        {
-            // Quay mặt sang phải (Mặc định)
             transform.rotation = Quaternion.Euler(0, 0, 0);
-        }
         else if (currentDirection < 0)
-        {
-            // Quay mặt sang trái (Xoay 180 độ)
             transform.rotation = Quaternion.Euler(0, 180, 0);
-        }
     }
     protected void HandleJump()
     {
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (Input.GetKeyDown(KeyCode.UpArrow) && canJump)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+            canJump = false;
         }
+    }
+
+    protected void OnCollisionEnter2D(Collision2D collision)
+    {
+        // Cho phép nhảy lại khi chạm bất kỳ vật thể nào phía dưới
+        if (collision.contacts[0].normal.y > 0.5f)
+            canJump = true;
     }
 
     virtual protected void HandleSkillInput() { }
