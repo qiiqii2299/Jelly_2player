@@ -1,55 +1,47 @@
 using UnityEngine;
 
 /// <summary>
-/// Gắn lên nhân vật Ironman (player hoặc AI).
-/// Chuột trái → bắn missile với cooldown 15s.
-/// Yêu cầu: gán missilePrefab (prefab có MissileProjectile) và firePoint.
+/// Gắn lên Ironman.
+/// Space → bắn tối đa 3 tên lửa, mỗi tên lửa nhắm vào 1 Player khác nhau.
+/// Cooldown 15s sau mỗi lần bắn.
 /// </summary>
 public class MissileSkill : MonoBehaviour
 {
-    [Header("References")]
-    [Tooltip("Prefab tên lửa — cần có script MissileProjectile")]
+    [Header("Prefab")]
+    [Tooltip("Kéo prefab tên lửa vào đây")]
     public GameObject missilePrefab;
-    [Tooltip("Transform điểm xuất phát tên lửa (ví dụ: tay / ngực Ironman)")]
-    public Transform  firePoint;
 
-    [Header("Cooldown")]
-    public float cooldown = 15f;
+    [Header("Điểm bắn")]
+    public Transform firePoint;
 
-    private float      cooldownTimer = 0f;
-    private bool       isReady       = true;
-    private Collider2D myCollider;  // giữ lại để tương thích, không còn dùng trực tiếp
+    [Header("Thông số")]
+    public float cooldown    = 15f;
+    public int   maxMissiles = 3;     // số tên lửa tối đa mỗi lần bắn
 
-    void Awake()
-    {
-        myCollider = GetComponent<Collider2D>();
-    }
+    private float cooldownTimer = 0f;
+    private bool  isReady       = true;
 
     void Update()
     {
-        // Đếm cooldown
         if (!isReady)
         {
             cooldownTimer -= Time.deltaTime;
             if (cooldownTimer <= 0f)
             {
-                isReady       = true;
-                cooldownTimer = 0f;
-                Debug.Log("[MissileSkill] Tên lửa đã sẵn sàng! Cooldown hồi xong.");
+                isReady = true;
+                Debug.Log("[MissileSkill] Tên lửa sẵn sàng! Cooldown hồi xong.");
             }
         }
 
-        // Input: chuột trái
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetKeyDown(KeyCode.Space))
             Fire();
     }
 
-    /// <summary>Gọi hàm này để bắn (dùng cho AI hoặc input thủ công).</summary>
     public void Fire()
     {
         if (!isReady)
         {
-            Debug.Log($"[MissileSkill] Còn {cooldownTimer:F1}s mới bắn lại được.");
+            Debug.Log($"[MissileSkill] Cooldown còn {cooldownTimer:F1}s.");
             return;
         }
 
@@ -59,24 +51,36 @@ public class MissileSkill : MonoBehaviour
             return;
         }
 
-        if (firePoint == null)
+        // Lấy danh sách tất cả Player (trừ chính Ironman)
+        GameObject[] allPlayers = GameObject.FindGameObjectsWithTag("Player");
+        int count = 0;
+
+        foreach (var target in allPlayers)
         {
-            Debug.LogWarning("[MissileSkill] Chưa gán firePoint!");
+            if (count >= maxMissiles) break;
+            if (target == gameObject) continue;
+
+            Vector3 spawnPos = firePoint != null ? firePoint.position : transform.position;
+            GameObject obj   = Instantiate(missilePrefab, spawnPos, Quaternion.identity);
+
+            MissileProjectile missile = obj.GetComponent<MissileProjectile>();
+            if (missile != null)
+                missile.Init(gameObject, target);
+            else
+                Debug.LogError("[MissileSkill] Prefab thiếu script MissileProjectile!");
+
+            count++;
+        }
+
+        if (count == 0)
+        {
+            Debug.LogWarning("[MissileSkill] Không tìm thấy Player nào để nhắm.");
             return;
         }
 
-        // Spawn và truyền gameObject của shooter để tránh self-hit
-        GameObject obj = Instantiate(missilePrefab, firePoint.position, firePoint.rotation);
-        Debug.Log($"[MissileSkill] Spawned missile tại {firePoint.position}");
-        MissileProjectile missile = obj.GetComponent<MissileProjectile>();
-        if (missile != null)
-            missile.Init(gameObject);
-        else
-            Debug.LogError("[MissileSkill] Prefab thiếu script MissileProjectile!");
-
+        Debug.Log($"[MissileSkill] Bắn {count} tên lửa! Cooldown {cooldown}s bắt đầu.");
         isReady       = false;
         cooldownTimer = cooldown;
-        Debug.Log("[MissileSkill] Đã bắn tên lửa! Cooldown 15s bắt đầu.");
     }
 
     public float GetRemainingCooldown() => isReady ? 0f : cooldownTimer;

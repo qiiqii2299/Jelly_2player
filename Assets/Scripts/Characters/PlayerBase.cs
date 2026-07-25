@@ -17,7 +17,7 @@ public class PlayerBase : MonoBehaviour
     [Header("Bám tường")]
     public float wallCheckDistance = 0.6f;    // khoảng cách raycast sang 2 bên để phát hiện tường
     public float wallSlideSpeed    = 1.5f;    // tốc độ trượt xuống khi hết thời gian bám
-    public float wallGrabDuration  = 2f;      // thời gian bám tường tối đa (giây)
+    public float wallGrabDuration  = 1f;      // thời gian bám tường tối đa (giây)
     public float wallJumpForceX    = 7f;      // lực ngang khi bật khỏi tường
     public float wallJumpForceY    = 10f;     // lực dọc khi bật khỏi tường
 
