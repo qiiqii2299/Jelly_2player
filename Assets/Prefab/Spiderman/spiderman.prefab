@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 2003030070844000634}
   - component: {fileID: 659323673997411434}
   - component: {fileID: 2206935427425835107}
+  - component: {fileID: -4547815021421519152}
   m_Layer: 10
   m_Name: spiderman
   m_TagString: Untagged
@@ -339,6 +340,22 @@ MonoBehaviour:
   wallGrabDuration: 0.1
   wallJumpForceX: 7
   wallJumpForceY: 10
+--- !u!114 &-4547815021421519152
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 953767914908523925}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01fe5ed627025284dae79c923c70f52b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerInputController
+  playerType: 2
+  skillKey: 32
+  ropeInKey: 122
+  ropeOutKey: 120
 --- !u!1 &3131792043233681685
 GameObject:
   m_ObjectHideFlags: 0

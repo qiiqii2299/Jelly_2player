@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CharacterData
   characterName: Batman
   avatarSprite: {fileID: -540375121143967267, guid: 3b5b64b2a9c14d747afad094c898b889, type: 3}
-  playerPrefab: {fileID: 0}
+  playerPrefab: {fileID: 7237262902726714271, guid: 993c53174dd9da647a724deeb0e4f950, type: 3}
   botPrefab: {fileID: 0}

@@ -30,9 +30,13 @@ public class WebSwing : MonoBehaviour
     private bool isSwinging = false;
     public bool IsSwinging => isSwinging;
 
+    private PlayerInputController inputController;
+
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+
+        inputController = GetComponent<PlayerInputController>();
 
         lineRenderer = GetComponent<LineRenderer>();
         if (lineRenderer == null)
@@ -58,12 +62,10 @@ public class WebSwing : MonoBehaviour
         if (!isSwinging)
             ScanForTarget();
 
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (inputController != null && inputController.IsSkillPressed)
         {
-            if (isSwinging)
-                ReleaseWeb();
-            else if (hasTarget)
-                ShootWeb();
+            if (isSwinging) ReleaseWeb();
+            else if (hasTarget) ShootWeb();
         }
 
         if (isSwinging)
@@ -124,20 +126,11 @@ public class WebSwing : MonoBehaviour
         if (input != 0)
             rb.AddForce(new Vector2(input * swingForce, 0f));
 
-        // ĐỔI PHÍM: Dùng phím Z (hoặc mũi tên đi lên tùy bạn đổi) để thu ngắn dây, X để thả dài dây ra
-        // Bạn có thể thay KeyCode.Z / KeyCode.X bằng bất kỳ phím nào bạn muốn (ví dụ: KeyCode.I, KeyCode.K)
-        if (webJoint != null)
+        if (webJoint != null && inputController != null)
         {
-            if (Input.GetKey(KeyCode.Z))
-            {
-                webJoint.distance -= 5f * Time.deltaTime; // Kéo người lại gần điểm bám
-            }
-            else if (Input.GetKey(KeyCode.X))
-            {
-                webJoint.distance += 5f * Time.deltaTime; // Thả dây dài ra
-            }
+            if (inputController.IsRopeInHeld) webJoint.distance -= 5f * Time.deltaTime;
+            else if (inputController.IsRopeOutHeld) webJoint.distance += 5f * Time.deltaTime;
 
-            // Giới hạn khoảng cách không bị vượt quá min/max
             webJoint.distance = Mathf.Clamp(webJoint.distance, minWebDistance, maxWebDistance);
         }
     }

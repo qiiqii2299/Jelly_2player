@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CharacterData
   characterName: Spiderman
   avatarSprite: {fileID: 7388399842426930641, guid: 3b5b64b2a9c14d747afad094c898b889, type: 3}
-  playerPrefab: {fileID: 0}
+  playerPrefab: {fileID: 953767914908523925, guid: d231f9512f892ff46a361861d4f0ebe0, type: 3}
   botPrefab: {fileID: 0}

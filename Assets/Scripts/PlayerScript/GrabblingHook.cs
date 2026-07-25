@@ -41,10 +41,12 @@ public class GrabblingHook : MonoBehaviour
     private bool isPulling = false;   // đang bám móc/đu dây
     private float facingX = 1f;      // hướng mặt lúc bắn
 
+    private PlayerInputController inputController;
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
 
+        inputController = GetComponent<PlayerInputController>();
         lineRenderer = GetComponent<LineRenderer>();
         if (lineRenderer == null)
             lineRenderer = gameObject.AddComponent<LineRenderer>();
@@ -67,7 +69,7 @@ public class GrabblingHook : MonoBehaviour
         if (!isPulling)
             ScanForTarget();
 
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (inputController.IsSkillPressed)
         {
             if (isPulling)
                 Launch();          // đang bám → phóng ra lấy đà
@@ -153,11 +155,11 @@ public class GrabblingHook : MonoBehaviour
         if (hookJoint != null)
         {
             // Bấm Z để thu ngắn dây lại, X để thả dài dây ra
-            if (Input.GetKey(KeyCode.Z))
+            if (inputController.IsRopeInHeld)
             {
                 hookJoint.distance -= climbSpeed * Time.deltaTime;
             }
-            else if (Input.GetKey(KeyCode.X))
+            else if (inputController.IsRopeOutHeld)
             {
                 hookJoint.distance += climbSpeed * Time.deltaTime;
             }

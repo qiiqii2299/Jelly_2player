@@ -35,10 +35,13 @@ public class PlayerBase : MonoBehaviour
     protected Rigidbody2D rb;
     protected Animator anim;
 
+    protected PlayerInputController inputController;
+
     virtual protected void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
+        inputController = GetComponent<PlayerInputController>();
     }
 
     virtual protected void Update()
@@ -145,12 +148,27 @@ public class PlayerBase : MonoBehaviour
     // -------------------------------------------------------
     protected void HandleMovement()
     {
-        // Không cho di chuyển ngang khi đang bám/trượt tường
         if (isWallGrabbing || isWallSliding) return;
 
         float moveInput = 0f;
-        if (Input.GetKey(KeyCode.RightArrow)) moveInput = 1f;
-        else if (Input.GetKey(KeyCode.LeftArrow)) moveInput = -1f;
+
+        // Đọc phím trái/phải thông qua inputController thay vì check cứng KeyCode
+        if (inputController != null)
+        {
+            if (inputController.IsRightHeld) moveInput = 1f;
+            else if (inputController.IsLeftHeld) moveInput = -1f;
+        }
+        else
+        {
+            // Fallback nếu quên gắn controller
+            if (Input.GetKey(KeyCode.RightArrow)) moveInput = 1f;
+            else if (Input.GetKey(KeyCode.LeftArrow)) moveInput = -1f;
+        }
+
+        if (isAutoRun && moveInput == 0)
+        {
+            moveInput = currentDirection;
+        }
 
         if (moveInput > 0) currentDirection = 1f;
         else if (moveInput < 0) currentDirection = -1f;
@@ -164,19 +182,18 @@ public class PlayerBase : MonoBehaviour
     // -------------------------------------------------------
     protected void HandleJump()
     {
-        if (!Input.GetKeyDown(KeyCode.UpArrow)) return;
+        bool jumpPressed = inputController != null ? inputController.IsJumpPressed : Input.GetKeyDown(KeyCode.UpArrow);
 
-        // Wall jump: đang bám hoặc trượt tường
+        if (!jumpPressed) return;
+
         if (isWallGrabbing || isWallSliding)
         {
             ExitWallGrab();
-            // Bật ra theo hướng ngược tường
             rb.linearVelocity = new Vector2(-wallSide * wallJumpForceX, wallJumpForceY);
             canJump = false;
             return;
         }
 
-        // Jump thường
         if (canJump)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);

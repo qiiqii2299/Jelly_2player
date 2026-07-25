@@ -3218,6 +3218,11 @@ MonoBehaviour:
   p2SelectedCharacter: {fileID: 0}
   selectedMap: {fileID: 0}
   isPlayer2Bot: 1
+  characterPrefabs:
+  - {fileID: 7237262902726714271, guid: 993c53174dd9da647a724deeb0e4f950, type: 3}
+  - {fileID: 953767914908523925, guid: d231f9512f892ff46a361861d4f0ebe0, type: 3}
+  spawnPointP1: {fileID: 0}
+  spawnPointP2: {fileID: 0}
 --- !u!4 &1227535263
 Transform:
   m_ObjectHideFlags: 0
