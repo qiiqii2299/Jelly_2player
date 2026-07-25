@@ -10,9 +10,12 @@ public class LaserProjectile : MonoBehaviour
     public float speed    = 20f;
     public float lifetime = 4f;
 
+    [Header("Va chạm")]
     [Header("Vụ nổ")]
+    [Tooltip("Tag của vật thể kích hoạt nổ — mặc định Ground và Player")]
+    public string[] explodeOnTags = { "Ground", "Player" };
     public GameObject explosionPrefab;      // để trống → tự tạo hình tròn vàng
-    public float      explosionRadius = 2f; // bán kính đẩy lùi
+    public float      explosionRadius = 2f;
     public float      knockbackForce  = 10f;
 
     private Vector2    direction;
@@ -47,13 +50,47 @@ public class LaserProjectile : MonoBehaviour
 
     void Update()
     {
-        transform.position += (Vector3)(direction * speed * Time.deltaTime);
+        Vector2 origin   = transform.position;
+        Vector2 moveStep = direction * speed * Time.deltaTime;
+
+        // Dùng RaycastAll để lọc được chính xác — bỏ qua laser và shooter
+        RaycastHit2D[] hits = Physics2D.RaycastAll(origin, direction, moveStep.magnitude + 0.15f);
+        foreach (var hit in hits)
+        {
+            // Bỏ qua chính mình và shooter
+            if (hit.collider.gameObject == gameObject) continue;
+            if (shooter != null && hit.collider.gameObject == shooter) continue;
+            // Bỏ qua collider thuộc children của shooter
+            if (shooter != null && hit.collider.transform.IsChildOf(shooter.transform)) continue;
+
+            if (ShouldExplode(hit.collider.tag))
+            {
+                transform.position = hit.point;
+                Explode();
+                return;
+            }
+        }
+
+        transform.position += (Vector3)moveStep;
     }
 
     void OnTriggerEnter2D(Collider2D other)
     {
         if (shooter != null && other.gameObject == shooter) return;
-        Explode();
+        if (ShouldExplode(other.tag)) Explode();
+    }
+
+    void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (shooter != null && collision.gameObject == shooter) return;
+        if (ShouldExplode(collision.gameObject.tag)) Explode();
+    }
+
+    bool ShouldExplode(string tag)
+    {
+        foreach (var t in explodeOnTags)
+            if (tag == t) return true;
+        return false;
     }
 
     void Explode()
