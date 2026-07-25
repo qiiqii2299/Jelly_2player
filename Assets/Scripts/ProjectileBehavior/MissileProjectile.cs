@@ -1,25 +1,33 @@
 using UnityEngine;
 
 /// <summary>
-/// Gắn lên MissilePrefab.
-/// - Tự tạo chấm tròn trắng (không cần component nào trên prefab ngoài script này).
-/// - Khi spawn: nhắm thẳng vào Player gần nhất (trừ Ironman bắn ra), bay đường thẳng.
+/// Gắn lên prefab tên lửa.
+/// Nhận target cụ thể từ MissileSkill, bay thẳng về hướng đó (không theo sát).
+/// Tự tạo visual chấm tròn trắng — prefab chỉ cần mỗi script này.
 /// </summary>
 public class MissileProjectile : MonoBehaviour
 {
-    [Header("Bay")]
-    public float speed    = 12f;
+    [Header("Thông số bay")]
+    public float speed    = 14f;
     public float lifetime = 5f;
 
     private Vector2    direction;
     private GameObject shooter;
 
-    // --------------------------------------------------
-    // Gọi từ MissileSkill ngay sau Instantiate
-    // --------------------------------------------------
-    public void Init(GameObject shooterObj)
+    // Gọi từ MissileSkill, truyền shooter và target cụ thể
+    public void Init(GameObject shooterObj, GameObject target)
     {
         shooter = shooterObj;
+
+        if (target != null)
+        {
+            direction = ((Vector2)target.transform.position - (Vector2)transform.position).normalized;
+            Debug.Log($"[Missile] Nhắm vào: {target.name}");
+        }
+        else
+        {
+            direction = transform.right;
+        }
     }
 
     void Awake()
@@ -29,7 +37,7 @@ public class MissileProjectile : MonoBehaviour
 
     void Start()
     {
-        // Ignore collision với shooter để không tự hủy ngay
+        // Ignore collision với shooter
         Collider2D myCol = GetComponent<Collider2D>();
         if (shooter != null && myCol != null)
         {
@@ -38,25 +46,11 @@ public class MissileProjectile : MonoBehaviour
                 Physics2D.IgnoreCollision(myCol, shooterCol, true);
         }
 
-        // Xác định hướng bay 1 lần duy nhất
-        GameObject target = FindNearestPlayer();
-        if (target != null)
-        {
-            direction = ((Vector2)target.transform.position - (Vector2)transform.position).normalized;
-            Debug.Log($"[Missile] Nhắm vào: {target.name} | hướng: {direction}");
-        }
-        else
-        {
-            direction = Vector2.right;
-            Debug.LogWarning("[Missile] Không tìm thấy target nào có tag 'Player'.");
-        }
-
         Destroy(gameObject, lifetime);
     }
 
     void Update()
     {
-        // Bay thẳng, không thay đổi hướng
         transform.position += (Vector3)(direction * speed * Time.deltaTime);
     }
 
@@ -66,22 +60,14 @@ public class MissileProjectile : MonoBehaviour
         Destroy(gameObject);
     }
 
-    // --------------------------------------------------
-    // Tạo visual chấm tròn trắng hoàn toàn bằng code
-    // Chỉ thêm component nếu chưa có
-    // --------------------------------------------------
     void BuildVisual()
     {
-        // --- SpriteRenderer ---
         SpriteRenderer sr = GetComponent<SpriteRenderer>();
         if (sr == null) sr = gameObject.AddComponent<SpriteRenderer>();
-
         sr.sprite       = MakeCircleSprite(32);
         sr.color        = Color.white;
         sr.sortingOrder = 10;
 
-        // --- Collider (chỉ 1 cái) ---
-        // Xóa Box nếu có để tránh xung đột
         BoxCollider2D box = GetComponent<BoxCollider2D>();
         if (box != null) Destroy(box);
 
@@ -90,7 +76,6 @@ public class MissileProjectile : MonoBehaviour
         col.isTrigger = true;
         col.radius    = 0.5f;
 
-        // --- Scale ---
         transform.localScale = new Vector3(0.25f, 0.25f, 1f);
     }
 
@@ -107,21 +92,5 @@ public class MissileProjectile : MonoBehaviour
 
         tex.Apply();
         return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
-    }
-
-    GameObject FindNearestPlayer()
-    {
-        GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
-        GameObject   nearest = null;
-        float        minDist = float.MaxValue;
-
-        foreach (var p in players)
-        {
-            if (p == shooter) continue;
-            float d = Vector2.Distance(transform.position, p.transform.position);
-            if (d < minDist) { minDist = d; nearest = p; }
-        }
-
-        return nearest;
     }
 }
