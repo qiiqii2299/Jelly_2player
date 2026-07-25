@@ -3,42 +3,43 @@ using UnityEngine;
 /// <summary>
 /// Gắn lên Batman.
 /// - Mỗi frame quét phía trên đầu (nghiêng theo hướng mặt) tìm điểm bám.
-/// - Space: có điểm bám → bắn móc, bắt đầu kéo Batman lên.
-/// - Space (đang kéo): phóng Batman ra theo lực lấy đà rồi thả móc.
-/// - Khi đến nơi hoặc chạm đất: tự thả móc.
+/// - Space: có điểm bám → bắn móc, bắt đầu bám dây.
+/// - Phím Z: thu ngắn dây | Phím X: thả dài dây ra.
+/// - Space (lần 2 khi đang bám): phóng Batman ra theo lực lấy đà rồi thả móc.
+/// - Chạm đất: tự thả móc.
 /// </summary>
 public class GrabblingHook : MonoBehaviour
 {
     [Header("Móc câu")]
-    public Transform  hookOrigin;           // điểm xuất phát móc (tay Batman)
-    public float      maxDistance   = 12f;
-    public float      minDistance   = 2f;
-    public LayerMask  hookLayer;            // layer tường/platform có thể bám
+    public Transform hookOrigin;             // điểm xuất phát móc (tay Batman)
+    public float maxDistance = 12f;
+    public float minDistance = 2f;
+    public LayerMask hookLayer;              // layer tường/platform có thể bám
 
     [Header("Góc quét")]
     [Tooltip("Góc lệch so với thẳng đứng khi quét tìm điểm bám (độ)")]
     public float scanAngle = 40f;
 
-    [Header("Kéo lên")]
-    public float pullSpeed = 8f;            // tốc độ kéo Batman lên điểm bám
-    public float arrivalDistance = 0.6f;    // khoảng cách coi là đã tới nơi
+    [Header("Điều khiển dây (Giống Spider-Man)")]
+    public float climbSpeed = 5f;             // Tốc độ thu ngắn / thả dài dây khi giữ phím Z / X
 
     [Header("Lực lấy đà (phóng khi nhấn Space lần 2)")]
-    public float launchForceX  = 10f;       // lực ngang khi phóng
-    public float launchForceY  = 12f;       // lực dọc khi phóng
+    public float launchForceX = 10f;         // lực ngang khi phóng
+    public float launchForceY = 12f;         // lực dọc khi phóng
 
     [Header("Prefab hiệu ứng")]
     public GameObject prefab_HookEffect;    // hiệu ứng khi móc bám tường
     public GameObject prefab_HookDart;      // thân móc hiển thị
 
     // ---- nội bộ ----
-    private Rigidbody2D  rb;
+    private Rigidbody2D rb;
     private LineRenderer lineRenderer;
-    private GameObject   activeDart;
-    private Vector2      hookPoint;
-    private bool         hasTarget   = false;
-    private bool         isPulling   = false;   // đang kéo lên
-    private float        facingX     = 1f;      // hướng mặt lúc bắn
+    private GameObject activeDart;
+    private Vector2 hookPoint;
+    private DistanceJoint2D hookJoint;      // Sử dụng DistanceJoint2D để giữ dây co giãn theo ý muốn giống Spiderman
+    private bool hasTarget = false;
+    private bool isPulling = false;   // đang bám móc/đu dây
+    private float facingX = 1f;      // hướng mặt lúc bắn
 
     void Start()
     {
@@ -49,15 +50,15 @@ public class GrabblingHook : MonoBehaviour
             lineRenderer = gameObject.AddComponent<LineRenderer>();
 
         lineRenderer.positionCount = 2;
-        lineRenderer.startWidth    = 0.05f;
-        lineRenderer.endWidth      = 0.05f;
-        lineRenderer.enabled       = false;
+        lineRenderer.startWidth = 0.05f;
+        lineRenderer.endWidth = 0.05f;
+        lineRenderer.enabled = false;
 
         if (lineRenderer.material == null || lineRenderer.material.name.Contains("Default"))
         {
-            lineRenderer.material   = new Material(Shader.Find("Sprites/Default"));
+            lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
             lineRenderer.startColor = Color.grey;
-            lineRenderer.endColor   = Color.grey;
+            lineRenderer.endColor = Color.grey;
         }
     }
 
@@ -69,13 +70,13 @@ public class GrabblingHook : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Space))
         {
             if (isPulling)
-                Launch();          // đang kéo → phóng ra lấy đà
+                Launch();          // đang bám → phóng ra lấy đà
             else if (hasTarget)
                 ShootHook();       // có target → bắn móc
         }
 
         if (isPulling)
-            PullTowardsHook();
+            HandleRopeAdjustment();
     }
 
     // -------------------------------------------------------
@@ -83,10 +84,10 @@ public class GrabblingHook : MonoBehaviour
     // -------------------------------------------------------
     void ScanForTarget()
     {
-        Vector2 origin  = hookOrigin != null ? (Vector2)hookOrigin.position : (Vector2)transform.position;
-        facingX         = transform.right.x > 0 ? 1f : -1f;
+        Vector2 origin = hookOrigin != null ? (Vector2)hookOrigin.position : (Vector2)transform.position;
+        facingX = transform.right.x > 0 ? 1f : -1f;
 
-        float   rad     = scanAngle * Mathf.Deg2Rad;
+        float rad = scanAngle * Mathf.Deg2Rad;
         Vector2 scanDir = new Vector2(Mathf.Sin(rad) * facingX, Mathf.Cos(rad)).normalized;
 
         RaycastHit2D hit = hookLayer != 0
@@ -110,9 +111,18 @@ public class GrabblingHook : MonoBehaviour
     // -------------------------------------------------------
     void ShootHook()
     {
-        isPulling             = true;
-        rb.gravityScale       = 0.3f;   // giảm gravity khi đang bị kéo
-        lineRenderer.enabled  = true;
+        isPulling = true;
+        rb.gravityScale = 0.3f;   // giảm gravity khi đang bám móc
+        lineRenderer.enabled = true;
+
+        // Tạo DistanceJoint2D để giữ khoảng cách linh hoạt với điểm bám
+        hookJoint = gameObject.AddComponent<DistanceJoint2D>();
+        hookJoint.connectedAnchor = hookPoint;
+        hookJoint.autoConfigureDistance = false;
+
+        Vector2 origin = hookOrigin != null ? (Vector2)hookOrigin.position : (Vector2)transform.position;
+        hookJoint.distance = Vector2.Distance(origin, hookPoint);
+        hookJoint.enableCollision = true;
 
         // Hiệu ứng tại điểm bám
         if (prefab_HookEffect != null)
@@ -136,26 +146,32 @@ public class GrabblingHook : MonoBehaviour
     }
 
     // -------------------------------------------------------
-    // Kéo Batman thẳng về hookPoint bằng velocity (không teleport)
+    // Điều chỉnh độ dài dây bằng phím Z và X khi đang bám móc
     // -------------------------------------------------------
-    void PullTowardsHook()
+    void HandleRopeAdjustment()
     {
-        Vector2 current = transform.position;
-        Vector2 dir     = (hookPoint - current).normalized;
+        if (hookJoint != null)
+        {
+            // Bấm Z để thu ngắn dây lại, X để thả dài dây ra
+            if (Input.GetKey(KeyCode.Z))
+            {
+                hookJoint.distance -= climbSpeed * Time.deltaTime;
+            }
+            else if (Input.GetKey(KeyCode.X))
+            {
+                hookJoint.distance += climbSpeed * Time.deltaTime;
+            }
 
-        // Dùng velocity thay vì dịch thẳng transform
-        rb.linearVelocity = dir * pullSpeed;
+            // Giới hạn khoảng cách dây trong khoảng an toàn
+            hookJoint.distance = Mathf.Clamp(hookJoint.distance, minDistance, maxDistance);
+        }
 
-        // Cập nhật dây
+        // Cập nhật hiển thị sợi dây liên tục theo vị trí tay Batman và điểm bám
         UpdateLine();
-
-        // Đến nơi → tự thả
-        if (Vector2.Distance(current, hookPoint) <= arrivalDistance)
-            ReleaseHook(false);
     }
 
     // -------------------------------------------------------
-    // Space lần 2 khi đang kéo → phóng ra lấy đà
+    // Space lần 2 khi đang bám → phóng ra lấy đà
     // -------------------------------------------------------
     void Launch()
     {
@@ -167,10 +183,17 @@ public class GrabblingHook : MonoBehaviour
     // -------------------------------------------------------
     void ReleaseHook(bool keepVelocity)
     {
-        isPulling            = false;
-        hasTarget            = false;
-        rb.gravityScale      = 1f;
+        isPulling = false;
+        hasTarget = false;
+        rb.gravityScale = 1f;
         lineRenderer.enabled = false;
+
+        // Xóa DistanceJoint2D khi thả móc
+        if (hookJoint != null)
+        {
+            Destroy(hookJoint);
+            hookJoint = null;
+        }
 
         if (!keepVelocity)
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
@@ -202,9 +225,9 @@ public class GrabblingHook : MonoBehaviour
 
     void OnDrawGizmosSelected()
     {
-        Vector2 origin  = hookOrigin != null ? (Vector2)hookOrigin.position : (Vector2)transform.position;
-        float   fx      = Application.isPlaying ? facingX : (transform.right.x > 0 ? 1f : -1f);
-        float   rad     = scanAngle * Mathf.Deg2Rad;
+        Vector2 origin = hookOrigin != null ? (Vector2)hookOrigin.position : (Vector2)transform.position;
+        float fx = Application.isPlaying ? facingX : (transform.right.x > 0 ? 1f : -1f);
+        float rad = scanAngle * Mathf.Deg2Rad;
         Vector2 scanDir = new Vector2(Mathf.Sin(rad) * fx, Mathf.Cos(rad)).normalized;
 
         Gizmos.color = hasTarget ? Color.green : Color.yellow;
