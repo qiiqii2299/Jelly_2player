@@ -39,6 +39,8 @@ public class SelectionManager : MonoBehaviour
     private Coroutine p1Bounce;
     private Coroutine p2Bounce;
 
+    [HideInInspector] public string nextSceneToLoad;
+
     private void Start()
     {
         UpdateMapUI();
@@ -178,22 +180,48 @@ public class SelectionManager : MonoBehaviour
     }
     #endregion
 
+
     #region READY / START GAME
     public void OnReadyButtonClicked()
     {
-        // Lưu lựa chọn vào GameManager
+        // 1. Kiểm tra GameManager xem đã tồn tại trong Scene chưa
+        if (GameManager.Instance == null)
+        {
+            Debug.LogError("LỖI: Không tìm thấy GameManager trong Scene hiện tại! Hãy chắc chắn bạn có đặt GameManager ở màn hình khởi đầu.");
+            return;
+        }
+
+        // 2. Kiểm tra dữ liệu Map
+        if (availableMaps == null || availableMaps.Length == 0 || availableMaps[currentMapIndex] == null)
+        {
+            Debug.LogError("LỖI: Danh sách Map đang bị trống hoặc dữ liệu Map tại vị trí hiện tại bị null!");
+            return;
+        }
+
+        // 3. Kiểm tra dữ liệu Nhân vật P1 & P2
+        if (availableCharacters == null || availableCharacters.Length == 0)
+        {
+            Debug.LogError("LỖI: Danh sách nhân vật (availableCharacters) đang bị trống!");
+            return;
+        }
+
+        // --- BẮT ĐẦU LƯU DỮ LIỆU KHI ĐÃ AN TOÀN ---
         GameManager.Instance.selectedMap = availableMaps[currentMapIndex];
         GameManager.Instance.p1SelectedCharacter = availableCharacters[currentP1Index];
         GameManager.Instance.p2SelectedCharacter = availableCharacters[currentP2Index];
 
-        // Lưu trạng thái Bot hay Player để map Gameplay nhận biết
+        // Lưu trạng thái Bot hay Player
         GameManager.Instance.isPlayer2Bot = isP2Bot;
 
-        // Load Scene Map đã chọn
+        // Lấy tên Scene Map đã chọn
         string sceneToLoad = availableMaps[currentMapIndex].sceneName;
-        SceneManager.LoadScene(sceneToLoad);
+        GameManager.Instance.nextSceneToLoad = sceneToLoad;
+
+        // Gọi qua SceneLoader để chuyển cảnh mượt mà qua Loading
+        SceneLoader.LoadNextScene(sceneToLoad);
     }
     #endregion
+
 
     #region ANIMATION ROUTINES
     // Phần thân của hàm BounceRoutine để tạo hiệu ứng nảy

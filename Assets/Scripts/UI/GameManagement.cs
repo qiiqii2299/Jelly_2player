@@ -11,6 +11,9 @@ public class GameManager : MonoBehaviour
     [HideInInspector] public CharacterData p2SelectedCharacter;
     [HideInInspector] public MapData selectedMap;
 
+    // THÊM BIẾN NÀY ĐỂ ĐỒNG BỘ VỚI SCENELOADER VÀ TRÁNH LỖI CS1061
+    [HideInInspector] public string nextSceneToLoad;
+
     [Header("Cấu hình chế độ chơi")]
     [Tooltip("Tích chọn (true) nếu Player 2 là Bot, bỏ tích (false) nếu muốn chơi 2 người (PvsP)")]
     public bool isPlayer2Bot = false; // Mặc định để false để test 2 bàn phím ngay
@@ -84,7 +87,7 @@ public class GameManager : MonoBehaviour
                 else
                 {
                     p2Input.playerType = PlayerInputController.PlayerType.Player2;
-                    p2Input.ApplyDefaultKeys(); // Tự động gán phím A, D, W, Right Shift, I, K
+                    p2Input.ApplyDefaultKeys(); // Tự động gán phím A, D, W, LeftShift, J, K
                 }
             }
         }

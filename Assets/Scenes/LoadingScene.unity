@@ -431,8 +431,8 @@ Canvas:
   m_GameObject: {fileID: 336326472}
   m_Enabled: 1
   serializedVersion: 3
-  m_RenderMode: 0
-  m_Camera: {fileID: 0}
+  m_RenderMode: 1
+  m_Camera: {fileID: 1331443688}
   m_PlaneDistance: 100
   m_PixelPerfect: 0
   m_ReceivesEvents: 1
@@ -639,8 +639,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: Loading...
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 3b3866e68e110f0458dac7be8f6602ac, type: 2}
+  m_sharedMaterial: {fileID: 1199574637873599172, guid: 3b3866e68e110f0458dac7be8f6602ac, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -670,7 +670,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -826,8 +826,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0.000049591, y: 86}
-  m_SizeDelta: {x: 145.0634, y: 72.3037}
+  m_AnchoredPosition: {x: 3, y: 75}
+  m_SizeDelta: {x: 243.94, y: 72.3}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1011199516
 MonoBehaviour:
@@ -851,8 +851,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: JELLY HERO
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 3b3866e68e110f0458dac7be8f6602ac, type: 2}
+  m_sharedMaterial: {fileID: 1199574637873599172, guid: 3b3866e68e110f0458dac7be8f6602ac, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -1093,6 +1093,7 @@ MonoBehaviour:
   - {fileID: -7689382371589266427, guid: 3b5b64b2a9c14d747afad094c898b889, type: 3}
   waveMultiplier: 5
   speedMultiplier: 4
+  minimumLoadTime: 2.5
 --- !u!1 &1488479533
 GameObject:
   m_ObjectHideFlags: 0
