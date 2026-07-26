@@ -135,11 +135,11 @@ GameObject:
   - component: {fileID: 26977598}
   m_Layer: 0
   m_Name: Ironman
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &26977594
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1012,6 +1012,8 @@ GameObject:
   - component: {fileID: 929926883}
   - component: {fileID: 929926888}
   - component: {fileID: 929926887}
+  - component: {fileID: 929926889}
+  - component: {fileID: 929926892}
   m_Layer: 0
   m_Name: Superman
   m_TagString: Untagged
@@ -1033,7 +1035,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerBase
   moveSpeed: 5
   jumpForce: 5
-  isAutoRun: 0
+  isAutoRun: 1
   groundCheck: {fileID: 929926886}
   groundCheckRadius: 0.2
   groundLayer:
@@ -1064,6 +1066,7 @@ MonoBehaviour:
   knockbackForce: 10
   laserSpeed: 20
   laserLifetime: 4
+  isBot: 1
 --- !u!212 &929926885
 SpriteRenderer:
   serializedVersion: 2
@@ -1212,6 +1215,50 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
+--- !u!114 &929926889
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 929926882}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3aed4fed898fdf848bf9051856122739, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SupermanBotSkill
+  moveSpeed: 5
+  jumpForce: 10
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 256
+  groundCheckLength: 0.7
+  gapProbeOffset: 0.7
+  gapProbeDepth: 2.5
+  wallRayLength: 1
+  wallRayHeight: 0.4
+  stuckTimeout: 1.8
+  detectionRange: 8
+  detectionAngle: 60
+--- !u!114 &929926892
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 929926882}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b2c967ac00051349a3b134e19f776a4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AIInputController
+  playerType: 0
+  leftKey: 276
+  rightKey: 275
+  jumpKey: 273
+  skillKey: 32
+  ropeInKey: 122
+  ropeOutKey: 120
 --- !u!1 &1090221339
 GameObject:
   m_ObjectHideFlags: 0
