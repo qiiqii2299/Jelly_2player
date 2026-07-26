@@ -121,6 +121,11 @@ MonoBehaviour:
   launchForceY: 12
   prefab_HookEffect: {fileID: 7164003069826664659, guid: a5e6272d852ff5c438b3d290f831a9b5, type: 3}
   prefab_HookDart: {fileID: 8425751631516492199, guid: ae9077a3729aee24ea53a8b7208c58a7, type: 3}
+  playerLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  slowPercentage: 0.5
+  slowDuration: 30
 --- !u!114 &6219069068101310659
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -142,8 +147,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 256
   wallCheckDistance: 0.6
-  wallSlideSpeed: 1.5
-  wallGrabDuration: 1
+  wallSlideSpeed: 5
+  wallGrabDuration: 0.2
   wallJumpForceX: 7
   wallJumpForceY: 10
 --- !u!50 &5158990757609076614
@@ -232,6 +237,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   playerType: 2
+  leftKey: 276
+  rightKey: 275
+  jumpKey: 273
   skillKey: 32
   ropeInKey: 122
   ropeOutKey: 120

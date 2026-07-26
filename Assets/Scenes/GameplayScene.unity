@@ -2231,7 +2231,7 @@ MonoBehaviour:
     CustomLookAtTarget: 0
   Lens:
     FieldOfView: 60
-    OrthographicSize: 8
+    OrthographicSize: 15
     NearClipPlane: 0.3
     FarClipPlane: 1000
     Dutch: 0
@@ -2304,7 +2304,7 @@ MonoBehaviour:
   LateralAdjustment: 0
   FovRange: {x: 1, y: 100}
   DollyRange: {x: -100, y: 100}
-  OrthoSizeRange: {x: 4, y: 10}
+  OrthoSizeRange: {x: 4, y: 12}
 --- !u!1 &1129583247
 GameObject:
   m_ObjectHideFlags: 0

@@ -16,8 +16,8 @@ public class PlayerBase : MonoBehaviour
 
     [Header("Bám tường")]
     public float wallCheckDistance = 0.6f;    // khoảng cách raycast sang 2 bên để phát hiện tường
-    public float wallSlideSpeed = 1.5f;    // tốc độ trượt xuống khi hết thời gian bám
-    public float wallGrabDuration = 1f;      // thời gian bám tường tối đa (giây)
+    public float wallSlideSpeed = 5.0f;    // tốc độ trượt xuống khi hết thời gian bám (đã cập nhật)
+    public float wallGrabDuration = 0.2f;      // thời gian bám tường tối đa (giây) (đã cập nhật)
     public float wallJumpForceX = 7f;      // lực ngang khi bật khỏi tường
     public float wallJumpForceY = 10f;     // lực dọc khi bật khỏi tường
 
@@ -108,7 +108,7 @@ public class PlayerBase : MonoBehaviour
     // -------------------------------------------------------
     void HandleWallGrab()
     {
-        // Bắt đầu bám tường khi chạm tường và đang rơi/bay
+        // Bắt đầu bám tường khi chạm tường và đang rơi/bay xuống
         if (isOnWall && !isGrounded && rb.linearVelocity.y <= 0)
         {
             if (!isWallGrabbing && !isWallSliding)
@@ -122,11 +122,11 @@ public class PlayerBase : MonoBehaviour
         {
             wallGrabTimer += Time.deltaTime;
 
-            // Giữ nhân vật cố định trên tường
-            rb.linearVelocity = new Vector2(0f, 0f);
-            rb.gravityScale = 0f;
+            // Cho phép trượt nhẹ từ từ ngay từ đầu để tạo cảm giác bám ma sát
+            rb.linearVelocity = new Vector2(0f, -wallSlideSpeed * 0.5f);
+            rb.gravityScale = 0.1f;
 
-            // Hết thời gian bám → bắt đầu trượt
+            // Hết thời gian bám ngắn -> chuyển sang trượt nhanh hơn
             if (wallGrabTimer >= wallGrabDuration)
             {
                 isWallGrabbing = false;
@@ -137,11 +137,10 @@ public class PlayerBase : MonoBehaviour
 
         if (isWallSliding)
         {
-            // Trượt xuống từ từ
+            // Trượt xuống với tốc độ trượt chuẩn
             rb.linearVelocity = new Vector2(0f, -wallSlideSpeed);
         }
     }
-
     // -------------------------------------------------------
     void ExitWallGrab()
     {
