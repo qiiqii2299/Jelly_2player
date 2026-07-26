@@ -30,12 +30,18 @@ public class PlayerBase : MonoBehaviour
     private bool isWallGrabbing = false;  // đang bám cứng (chưa trượt)
     private bool isWallSliding = false;  // đang trượt xuống từ từ
     private float wallGrabTimer = 0f;
-    private float wallSide = 0f;     // 1 = tường bên phải, -1 = tường bên trái
+    private float wallSide = 0f;      // 1 = tường bên phải, -1 = tường bên trái
 
     protected Rigidbody2D rb;
     protected Animator anim;
 
     protected PlayerInputController inputController;
+
+    // --- HÀM KIỂM TRA NHANH XEM NHÂN VẬT NÀY CÓ PHẢI LÀ BOT KHÔNG ---
+    protected bool IsBotControlled()
+    {
+        return GetComponent<BatmanBotAI>() != null && GameManager.Instance != null && GameManager.Instance.isPlayer2Bot;
+    }
 
     virtual protected void Start()
     {
@@ -52,6 +58,9 @@ public class PlayerBase : MonoBehaviour
         HandleSkillInput();
 
         if (isGrappling) return;
+
+        // Nếu là Bot thì bỏ qua các hàm đọc phím điều khiển thủ công của người chơi
+        if (IsBotControlled()) return;
 
         HandleWallGrab();
         HandleMovement();
@@ -148,6 +157,7 @@ public class PlayerBase : MonoBehaviour
     // -------------------------------------------------------
     protected void HandleMovement()
     {
+        if (IsBotControlled()) return; // Chặn tuyệt đối nếu là Bot
         if (isWallGrabbing || isWallSliding) return;
 
         float moveInput = 0f;
@@ -182,6 +192,8 @@ public class PlayerBase : MonoBehaviour
     // -------------------------------------------------------
     protected void HandleJump()
     {
+        if (IsBotControlled()) return; // Chặn tuyệt đối nếu là Bot
+
         bool jumpPressed = inputController != null ? inputController.IsJumpPressed : Input.GetKeyDown(KeyCode.UpArrow);
 
         if (!jumpPressed) return;

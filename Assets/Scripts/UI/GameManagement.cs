@@ -11,12 +11,11 @@ public class GameManager : MonoBehaviour
     [HideInInspector] public CharacterData p2SelectedCharacter;
     [HideInInspector] public MapData selectedMap;
 
-    // THÊM BIẾN NÀY ĐỂ ĐỒNG BỘ VỚI SCENELOADER VÀ TRÁNH LỖI CS1061
     [HideInInspector] public string nextSceneToLoad;
 
     [Header("Cấu hình chế độ chơi")]
     [Tooltip("Tích chọn (true) nếu Player 2 là Bot, bỏ tích (false) nếu muốn chơi 2 người (PvsP)")]
-    public bool isPlayer2Bot = false; // Mặc định để false để test 2 bàn phím ngay
+    public bool isPlayer2Bot = false;
 
     [HideInInspector] public Transform spawnPointP1;
     [HideInInspector] public Transform spawnPointP2;
@@ -63,32 +62,31 @@ public class GameManager : MonoBehaviour
         {
             GameObject p2PrefabToSpawn;
 
+            // NẾU LÀ BOT VÀ ĐÃ CÓ CONFIG BOT PREFAB (ĐÃ LÀM Ở CÁCH 1), HỆ THỐNG SỰ TỰ ĐỘNG LẤY DÙNG
             if (isPlayer2Bot && p2SelectedCharacter.botPrefab != null)
             {
-                // Nếu là Bot và có cấu hình botPrefab riêng thì dùng botPrefab
                 p2PrefabToSpawn = p2SelectedCharacter.botPrefab;
             }
             else
             {
-                // Ngược lại dùng playerPrefab chung
                 p2PrefabToSpawn = p2SelectedCharacter.playerPrefab;
             }
 
             p2Obj = Instantiate(p2PrefabToSpawn, spawnPointP2.position, Quaternion.identity);
 
-            PlayerInputController p2Input = p2Obj.GetComponent<PlayerInputController>();
-            if (p2Input != null)
+            // NẾU KHÔNG PHẢI BOT (TỨC LÀ P2 LÀ NGƯỜI CHƠI THẬT), GÁN PHÍM ĐIỀU KHIỂN BÌNH THƯỜNG
+            if (!isPlayer2Bot)
             {
-                if (isPlayer2Bot)
-                {
-                    p2Input.enabled = false; // Tắt nhận phím để nhường quyền cho AI Controller
-                    // TODO: Thêm lệnh bật AI cho P2 ở đây nếu cần
-                }
-                else
+                PlayerInputController p2Input = p2Obj.GetComponent<PlayerInputController>();
+                if (p2Input != null)
                 {
                     p2Input.playerType = PlayerInputController.PlayerType.Player2;
                     p2Input.ApplyDefaultKeys(); // Tự động gán phím A, D, W, LeftShift, J, K
                 }
+            }
+            else
+            {
+                Debug.Log("Player 2 hoạt động ở chế độ BOT (Sử dụng Prefab chuyên dụng độc lập).");
             }
         }
         else
@@ -99,13 +97,11 @@ public class GameManager : MonoBehaviour
         // 3. Đưa cả 2 nhân vật vào Camera Target Group của Cinemachine
         if (cameraTargetGroup != null && p1Obj != null && p2Obj != null)
         {
-            // Đảm bảo list/array đã có đủ 2 ô
             if (cameraTargetGroup.Targets == null)
             {
                 cameraTargetGroup.Targets = new System.Collections.Generic.List<CinemachineTargetGroup.Target>();
             }
 
-            // Nếu danh sách chưa đủ 2 phần tử thì thêm mới, ngược lại gán đè trực tiếp
             cameraTargetGroup.Targets.Clear();
             cameraTargetGroup.Targets.Add(new CinemachineTargetGroup.Target { Object = p1Obj.transform, Weight = 1f, Radius = 1f });
             cameraTargetGroup.Targets.Add(new CinemachineTargetGroup.Target { Object = p2Obj.transform, Weight = 1f, Radius = 1f });
