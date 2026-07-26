@@ -9,10 +9,10 @@ using UnityEngine;
 public class WebSwing : MonoBehaviour
 {
     [Header("Tơ")]
-    public Transform  webOrigin;            // điểm xuất phát tơ (Spiderman_Throw_Point)
-    public float      maxWebDistance = 15f;
-    public float      minWebDistance = 2f;
-    public LayerMask  attachableLayers;     // layer tường/platform có thể bám
+    public Transform webOrigin;             // điểm xuất phát tơ (Spiderman_Throw_Point)
+    public float maxWebDistance = 15f;
+    public float minWebDistance = 2f;
+    public LayerMask attachableLayers;      // layer tường/platform có thể bám
 
     [Header("Góc quét")]
     [Tooltip("Góc lệch so với thẳng đứng khi quét tìm điểm bám (độ)")]
@@ -21,38 +21,39 @@ public class WebSwing : MonoBehaviour
     [Header("Vật lý đu")]
     public float swingForce = 20f;
 
-    [Header("Prefab hiệu ứng")]
-    public GameObject prefab_hitWebEffect;
-    public GameObject prefab_WebDart;
-
     // ---- nội bộ ----
-    private Rigidbody2D     rb;
-    private LineRenderer    lineRenderer;
+    private Rigidbody2D rb;
+    private LineRenderer lineRenderer;
     private DistanceJoint2D webJoint;
-    private GameObject      activeDart;
-    private Vector2         attachPoint;
-    private bool            hasTarget   = false;    // có điểm bám hợp lệ phía trên không
-    private bool            isSwinging  = false;
-    public  bool            IsSwinging => isSwinging;
+    private Vector2 attachPoint;
+    private bool hasTarget = false;     // có điểm bám hợp lệ phía trên không
+    private bool isSwinging = false;
+    public bool IsSwinging => isSwinging;
+
+    private PlayerInputController inputController;
 
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+
+        inputController = GetComponent<PlayerInputController>();
 
         lineRenderer = GetComponent<LineRenderer>();
         if (lineRenderer == null)
             lineRenderer = gameObject.AddComponent<LineRenderer>();
 
         lineRenderer.positionCount = 2;
-        lineRenderer.startWidth    = 0.06f;
-        lineRenderer.endWidth      = 0.06f;
-        lineRenderer.enabled       = false;
+
+        // Điều chỉnh độ dày sợi tơ vừa phải
+        lineRenderer.startWidth = 0.3f;
+        lineRenderer.endWidth = 0.3f;
+        lineRenderer.enabled = false;
 
         if (lineRenderer.material == null || lineRenderer.material.name.Contains("Default"))
         {
-            lineRenderer.material   = new Material(Shader.Find("Sprites/Default"));
+            lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
             lineRenderer.startColor = Color.white;
-            lineRenderer.endColor   = Color.white;
+            lineRenderer.endColor = Color.white;
         }
     }
 
@@ -61,12 +62,10 @@ public class WebSwing : MonoBehaviour
         if (!isSwinging)
             ScanForTarget();
 
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (inputController != null && inputController.IsSkillPressed)
         {
-            if (isSwinging)
-                ReleaseWeb();
-            else if (hasTarget)
-                ShootWeb();
+            if (isSwinging) ReleaseWeb();
+            else if (hasTarget) ShootWeb();
         }
 
         if (isSwinging)
@@ -85,8 +84,8 @@ public class WebSwing : MonoBehaviour
         float facingX = transform.right.x > 0 ? 1f : -1f;
 
         // Hướng bắn: lên trên nghiêng theo hướng mặt (angle độ so với trục Y)
-        float   rad       = scanAngle * Mathf.Deg2Rad;
-        Vector2 scanDir   = new Vector2(Mathf.Sin(rad) * facingX, Mathf.Cos(rad)).normalized;
+        float rad = scanAngle * Mathf.Deg2Rad;
+        Vector2 scanDir = new Vector2(Mathf.Sin(rad) * facingX, Mathf.Cos(rad)).normalized;
 
         RaycastHit2D hit = attachableLayers != 0
             ? Physics2D.Raycast(origin, scanDir, maxWebDistance, attachableLayers)
@@ -96,7 +95,7 @@ public class WebSwing : MonoBehaviour
         if (hit.collider != null && hit.collider.gameObject != gameObject
             && Vector2.Distance(origin, hit.point) >= minWebDistance)
         {
-            hasTarget   = true;
+            hasTarget = true;
             attachPoint = hit.point;
         }
         else
@@ -110,35 +109,15 @@ public class WebSwing : MonoBehaviour
         Vector2 origin = webOrigin != null ? (Vector2)webOrigin.position : (Vector2)transform.position;
 
         webJoint = gameObject.AddComponent<DistanceJoint2D>();
-        webJoint.connectedAnchor       = attachPoint;
+        webJoint.connectedAnchor = attachPoint;
+
+        // ĐÃ THÊM ĐIỀU CHỈNH: Cho phép DistanceJoint2D tự động cập nhật hoặc co giãn độ dài linh hoạt theo thực tế
         webJoint.autoConfigureDistance = false;
-        webJoint.distance              = Vector2.Distance(origin, attachPoint) * 0.95f;
-        webJoint.enableCollision       = true;
+        webJoint.enableCollision = true;
 
         lineRenderer.enabled = true;
-        isSwinging           = true;
-        rb.linearDamping     = 0.5f;
-
-        // Hiệu ứng
-        if (prefab_hitWebEffect != null)
-        {
-            GameObject fx = Instantiate(prefab_hitWebEffect, attachPoint, Quaternion.identity);
-            // Đảm bảo hiển thị trên foreground
-            SetSortingOrder(fx, 20);
-            Destroy(fx, 0.5f);
-        }
-
-        if (prefab_WebDart != null)
-        {
-            if (activeDart == null)
-                activeDart = Instantiate(prefab_WebDart, attachPoint, Quaternion.identity);
-            else
-            {
-                activeDart.transform.position = attachPoint;
-                activeDart.SetActive(true);
-            }
-            SetSortingOrder(activeDart, 20);
-        }
+        isSwinging = true;
+        rb.linearDamping = 0.5f;
     }
 
     void HandleSwingMovement()
@@ -146,18 +125,25 @@ public class WebSwing : MonoBehaviour
         float input = Input.GetAxisRaw("Horizontal");
         if (input != 0)
             rb.AddForce(new Vector2(input * swingForce, 0f));
+
+        if (webJoint != null && inputController != null)
+        {
+            if (inputController.IsRopeInHeld) webJoint.distance -= 5f * Time.deltaTime;
+            else if (inputController.IsRopeOutHeld) webJoint.distance += 5f * Time.deltaTime;
+
+            webJoint.distance = Mathf.Clamp(webJoint.distance, minWebDistance, maxWebDistance);
+        }
     }
 
     void ReleaseWeb()
     {
-        isSwinging       = false;
-        hasTarget        = false;
+        isSwinging = false;
+        hasTarget = false;
         rb.linearDamping = 0f;
 
         if (webJoint != null) { Destroy(webJoint); webJoint = null; }
 
         lineRenderer.enabled = false;
-        if (activeDart != null) activeDart.SetActive(false);
     }
 
     void OnCollisionEnter2D(Collision2D collision)
@@ -169,34 +155,19 @@ public class WebSwing : MonoBehaviour
     void LateUpdate()
     {
         if (!isSwinging || webJoint == null) return;
+
+        // Cập nhật điểm đầu của tơ tại vị trí tay nhân vật (webOrigin) và điểm cuối tại điểm bám (attachPoint)
         Vector2 start = webOrigin != null ? (Vector2)webOrigin.position : (Vector2)transform.position;
         lineRenderer.SetPosition(0, start);
         lineRenderer.SetPosition(1, attachPoint);
-
-        // Cập nhật vị trí WebDart giữa throw point và điểm bám
-        if (activeDart != null)
-        {
-            activeDart.transform.position = Vector2.Lerp(start, attachPoint, 0.5f);
-            // Xoay WebDart theo hướng dây
-            Vector2 dir = attachPoint - start;
-            float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-            activeDart.transform.rotation = Quaternion.Euler(0, 0, angle);
-        }
-    }
-
-    // Đặt sorting order cho tất cả SpriteRenderer trong object
-    void SetSortingOrder(GameObject obj, int order)
-    {
-        foreach (var sr in obj.GetComponentsInChildren<SpriteRenderer>())
-            sr.sortingOrder = order;
     }
 
     // Vẽ hướng quét trong Scene view để dễ debug
     void OnDrawGizmosSelected()
     {
-        Vector2 origin  = webOrigin != null ? (Vector2)webOrigin.position : (Vector2)transform.position;
-        float   facingX = transform.right.x > 0 ? 1f : -1f;
-        float   rad     = scanAngle * Mathf.Deg2Rad;
+        Vector2 origin = webOrigin != null ? (Vector2)webOrigin.position : (Vector2)transform.position;
+        float facingX = transform.right.x > 0 ? 1f : -1f;
+        float rad = scanAngle * Mathf.Deg2Rad;
         Vector2 scanDir = new Vector2(Mathf.Sin(rad) * facingX, Mathf.Cos(rad)).normalized;
 
         Gizmos.color = hasTarget ? Color.green : Color.yellow;

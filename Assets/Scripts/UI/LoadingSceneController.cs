@@ -44,6 +44,23 @@ public class LoadingScreenController : MonoBehaviour
             if (currentFrame >= characterSprites.Length) currentFrame = 0;
             if (characterImage != null) characterImage.sprite = characterSprites[currentFrame];
         }
+
+        // BẮT ĐẦU TẢI SCENE THẬT NGAY TỪ HÀM START ĐỂ TRÁNH LẶP LẠI TRONG UPDATE
+        if (!isLoadingStarted)
+        {
+            isLoadingStarted = true;
+
+            string sceneToLoad = SceneLoader.targetSceneName;
+
+            // Phòng hờ trường hợp bạn bấm Play trực tiếp độc lập từ LoadingScene
+            if (string.IsNullOrEmpty(sceneToLoad))
+            {
+                sceneToLoad = "Factory Map"; // Đổi thành tên map mặc định của bạn nếu cần test lẻ
+                Debug.LogWarning("Không tìm thấy tên từ SceneLoader, tự động gán sang: " + sceneToLoad);
+            }
+
+            StartCoroutine(LoadSceneAsyncCoroutine(sceneToLoad));
+        }
     }
 
     void Update()
@@ -99,21 +116,6 @@ public class LoadingScreenController : MonoBehaviour
                     textInfo.meshInfo[i].mesh.vertices = textInfo.meshInfo[i].vertices;
                     loadingText.UpdateGeometry(textInfo.meshInfo[i].mesh, i);
                 }
-            }
-        }
-
-        // 4. BẮT ĐẦU TẢI SCENE THẬT 
-        if (!isLoadingStarted)
-        {
-            isLoadingStarted = true;
-
-            if (!string.IsNullOrEmpty(SceneLoader.targetSceneName))
-            {
-                StartCoroutine(LoadSceneAsyncCoroutine(SceneLoader.targetSceneName));
-            }
-            else
-            {
-                Debug.LogWarning("Không có tên Scene đích đến!");
             }
         }
     }

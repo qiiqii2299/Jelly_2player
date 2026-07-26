@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 30f9a1a6c01acfa47af86f1db7e15caa
+guid: c85b10bb52742a047b8558b008cf30af
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -2188990289621782727
-    second: Steel 4.2_0
+      213: -1046444227985733684
+    second: map2_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -51,7 +51,7 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 150
+  spritePixelsToUnits: 100
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -100,38 +100,23 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Steel 4.2_0
+      name: map2_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 5970
-        height: 3700
+        width: 821
+        height: 511
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
-      physicsShape:
-      - - {x: 398, y: -1376}
-        - {x: 898, y: -1384}
-        - {x: 901, y: -1535}
-        - {x: 1405, y: -1546}
-        - {x: 1389, y: -1702}
-        - {x: 2317, y: -1678}
-        - {x: 2333, y: -1366}
-        - {x: 2971, y: -1373}
-        - {x: 2981, y: -1834}
-        - {x: -2968, y: -1827}
-        - {x: -2985, y: 1840}
-        - {x: -1857, y: 1836}
-        - {x: -1818, y: -275}
-        - {x: -1813, y: -1217}
-        - {x: 381, y: -1196}
-      tessellationDetail: 0
+      physicsShape: []
+      tessellationDetail: -1
       bones: []
-      spriteID: 93f605aede42f91e0800000000000000
-      internalID: -2188990289621782727
+      spriteID: cc707a9d4884a71f0800000000000000
+      internalID: -1046444227985733684
       vertices: []
       indices: 
       edges: []
@@ -140,7 +125,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: ab77b8b587ffa604da1ddf5bb8a57ceb
+    spriteID: 
     internalID: 0
     vertices: []
     indices: 
@@ -150,7 +135,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Steel 4.2_0: -2188990289621782727
+      map2_0: -1046444227985733684
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

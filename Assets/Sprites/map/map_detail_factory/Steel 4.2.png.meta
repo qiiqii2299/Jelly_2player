@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 9198428b1c276c74eb5febde57c6ad32
+guid: 30f9a1a6c01acfa47af86f1db7e15caa
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 5575679410950239764
-    second: Steel 9_0
+      213: -2188990289621782727
+    second: Steel 4.2_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -51,7 +51,7 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 50
+  spritePixelsToUnits: 150
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -100,23 +100,43 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Steel 9_0
+      name: Steel 4.2_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 600
-        height: 150
+        width: 5970
+        height: 3700
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
-      physicsShape: []
-      tessellationDetail: -1
+      physicsShape:
+      - - {x: 398, y: -1376}
+        - {x: 898, y: -1384}
+        - {x: 901, y: -1535}
+        - {x: 1405, y: -1546}
+        - {x: 1389, y: -1702}
+        - {x: 2317, y: -1678}
+        - {x: 2333, y: -1366}
+        - {x: 2971, y: -1373}
+        - {x: 2981, y: -1834}
+        - {x: -2968, y: -1827}
+        - {x: -2985, y: 1840}
+        - {x: -1857, y: 1836}
+        - {x: -1831, y: -99}
+        - {x: -2145, y: -93}
+        - {x: -2164, y: -257}
+        - {x: -2325, y: -275}
+        - {x: -2331, y: -721}
+        - {x: -2004, y: -744}
+        - {x: -1989, y: -1217}
+        - {x: 381, y: -1196}
+      tessellationDetail: 0
       bones: []
-      spriteID: 416f52f02eac06d40800000000000000
-      internalID: 5575679410950239764
+      spriteID: 93f605aede42f91e0800000000000000
+      internalID: -2188990289621782727
       vertices: []
       indices: 
       edges: []
@@ -125,7 +145,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: ab77b8b587ffa604da1ddf5bb8a57ceb
     internalID: 0
     vertices: []
     indices: 
@@ -135,7 +155,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Steel 9_0: 5575679410950239764
+      Steel 4.2_0: -2188990289621782727
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
