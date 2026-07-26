@@ -44,3 +44,7 @@ Các file hệ thống OS
 
 .DS_Store
 Thumbs.db
+
+# Giữ lại toàn bộ Assets và ProjectSettings (nhân vật, script, prefab…)
+!Assets/**
+!ProjectSettings/**
