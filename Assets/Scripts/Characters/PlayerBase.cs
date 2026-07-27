@@ -26,6 +26,9 @@ public class PlayerBase : MonoBehaviour
     protected bool isGrappling = false;
     private bool canJump = true;
 
+    // Flag bất động — FreezeEffect set để chặn toàn bộ input/movement
+    public bool IsFrozen { get; private set; } = false;
+
     private bool isOnWall = false;   // đang chạm tường
     private bool isWallGrabbing = false;  // đang bám cứng (chưa trượt)
     private bool isWallSliding = false;  // đang trượt xuống từ từ
@@ -52,6 +55,9 @@ public class PlayerBase : MonoBehaviour
 
     virtual protected void Update()
     {
+        // Đang bị bất động — bỏ qua toàn bộ input và movement
+        if (IsFrozen) return;
+
         CheckGrounded();
         CheckWall();
 
@@ -220,4 +226,25 @@ public class PlayerBase : MonoBehaviour
     }
 
     virtual protected void HandleSkillInput() { }
+
+    // -------------------------------------------------------
+    // Gọi từ FreezeEffect để bật/tắt trạng thái bất động
+    // -------------------------------------------------------
+    public void SetFrozen(bool frozen)
+    {
+        IsFrozen = frozen;
+
+        if (frozen && rb != null)
+        {
+            // Dừng hoàn toàn vận tốc ngay lập tức
+            rb.linearVelocity = Vector2.zero;
+            rb.gravityScale   = 0f;
+            rb.constraints    = RigidbodyConstraints2D.FreezeAll;
+        }
+        else if (!frozen && rb != null)
+        {
+            rb.gravityScale = 1f;
+            rb.constraints  = RigidbodyConstraints2D.FreezeRotation;
+        }
+    }
 }
