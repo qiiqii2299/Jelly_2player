@@ -8,12 +8,13 @@ public class PlayerInputController : MonoBehaviour
     public PlayerType playerType = PlayerType.Player1;
 
     [Header("Cấu hình phím di chuyển")]
-    public KeyCode leftKey = KeyCode.LeftArrow;
-    public KeyCode rightKey = KeyCode.RightArrow;
-    public KeyCode jumpKey = KeyCode.UpArrow;
+    public KeyCode leftKey = KeyCode.A;
+    public KeyCode rightKey = KeyCode.D;
+    public KeyCode jumpKey = KeyCode.W;
 
     [Header("Cấu hình phím skill (Input)")]
     public KeyCode skillKey = KeyCode.Space;
+    public KeyCode secondarySkillKey = KeyCode.J;
     public KeyCode ropeInKey = KeyCode.Z;
     public KeyCode ropeOutKey = KeyCode.X;
 
@@ -26,23 +27,25 @@ public class PlayerInputController : MonoBehaviour
     {
         if (playerType == PlayerType.Player1)
         {
-            // Player 1: Di chuyển bằng Mũi tên + Skill dùng Space, Z, X
-            leftKey = KeyCode.LeftArrow;
-            rightKey = KeyCode.RightArrow;
-            jumpKey = KeyCode.UpArrow;
-            skillKey = KeyCode.Space;
-            ropeInKey = KeyCode.Z;
-            ropeOutKey = KeyCode.X;
+            // P1 (bên trái bàn phím): WASD di chuyển, Space skill chính, J skill phụ
+            leftKey           = KeyCode.A;
+            rightKey          = KeyCode.D;
+            jumpKey           = KeyCode.W;
+            skillKey          = KeyCode.Space;
+            secondarySkillKey = KeyCode.J;
+            ropeInKey         = KeyCode.Z;
+            ropeOutKey        = KeyCode.X;
         }
         else if (playerType == PlayerType.Player2)
         {
-            // Player 2: Di chuyển bằng WASD + Skill dùng LeftShift, J, K (Hoàn toàn độc lập với P1)
-            leftKey = KeyCode.A;
-            rightKey = KeyCode.D;
-            jumpKey = KeyCode.W;
-            skillKey = KeyCode.LeftShift;
-            ropeInKey = KeyCode.J;
-            ropeOutKey = KeyCode.K;
+            // P2 (bên phải bàn phím): Mũi tên di chuyển, Numpad0 skill chính, Numpad4 skill phụ
+            leftKey           = KeyCode.LeftArrow;
+            rightKey          = KeyCode.RightArrow;
+            jumpKey           = KeyCode.UpArrow;
+            skillKey          = KeyCode.Keypad0;
+            secondarySkillKey = KeyCode.Keypad4;
+            ropeInKey         = KeyCode.Keypad1;
+            ropeOutKey        = KeyCode.Keypad2;
         }
     }
 
@@ -62,6 +65,7 @@ public class PlayerInputController : MonoBehaviour
 
     // Thuộc tính skill
     public bool IsSkillPressed => Input.GetKeyDown(skillKey);
+    public bool IsSecondarySkillPressed => Input.GetKeyDown(secondarySkillKey);
     public bool IsRopeInHeld => Input.GetKey(ropeInKey);
     public bool IsRopeOutHeld => Input.GetKey(ropeOutKey);
 }
