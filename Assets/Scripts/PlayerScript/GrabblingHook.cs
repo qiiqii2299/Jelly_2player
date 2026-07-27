@@ -87,7 +87,8 @@ public class GrabblingHook : MonoBehaviour
                 ShootHook();       // có target → bắn móc
         }
 
-        if (isPulling)
+        // Chỉ gọi điều chỉnh dây bằng phím Z/X nếu đang bám và KHÔNG phải là Bot (tránh lỗi NullReference)
+        if (isPulling && !isBotControlled)
             HandleRopeAdjustment();
     }
     // -------------------------------------------------------
@@ -130,9 +131,6 @@ public class GrabblingHook : MonoBehaviour
         }
     }
 
-    // -------------------------------------------------------
-    // Bắn móc (Hỗ trợ cả bám tường lẫn bắn trúng làm chậm Player)
-    // -------------------------------------------------------
     // -------------------------------------------------------
     // Bắn móc (Hỗ trợ cả bám tường lẫn bắn trúng làm chậm Player)
     // -------------------------------------------------------
@@ -179,7 +177,7 @@ public class GrabblingHook : MonoBehaviour
         // Hiệu ứng tại điểm bám
         if (prefab_HookEffect != null)
         {
-            GameObject fxObj = Instantiate(prefab_HookEffect, hookPoint, Quaternion.identity); // Đổi cả fx thành fxObj nếu muốn an toàn tuyệt đối
+            GameObject fxObj = Instantiate(prefab_HookEffect, hookPoint, Quaternion.identity);
             Destroy(fxObj, 0.5f);
         }
 
@@ -196,6 +194,7 @@ public class GrabblingHook : MonoBehaviour
             SetSortingOrder(activeDart, 20);
         }
     }
+
     // Coroutine xử lý hiệu ứng làm chậm đối thủ trong 30 giây
     IEnumerator ApplySlowEffect(PlayerBase targetPlayer)
     {
@@ -218,14 +217,18 @@ public class GrabblingHook : MonoBehaviour
     {
         if (hookJoint != null)
         {
-            // Bấm Z để thu ngắn dây lại, X để thả dài dây ra
-            if (inputController.IsRopeInHeld)
+            // Kiểm tra an toàn inputController trước khi đọc phím
+            if (inputController != null)
             {
-                hookJoint.distance -= climbSpeed * Time.deltaTime;
-            }
-            else if (inputController.IsRopeOutHeld)
-            {
-                hookJoint.distance += climbSpeed * Time.deltaTime;
+                // Bấm Z để thu ngắn dây lại, X để thả dài dây ra
+                if (inputController.IsRopeInHeld)
+                {
+                    hookJoint.distance -= climbSpeed * Time.deltaTime;
+                }
+                else if (inputController.IsRopeOutHeld)
+                {
+                    hookJoint.distance += climbSpeed * Time.deltaTime;
+                }
             }
 
             // Giới hạn khoảng cách dây trong khoảng an toàn

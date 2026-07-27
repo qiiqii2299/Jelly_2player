@@ -19,7 +19,7 @@ GameObject:
   - component: {fileID: -4547815021421519152}
   m_Layer: 10
   m_Name: spiderman
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -353,6 +353,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerInputController
   playerType: 2
+  leftKey: 276
+  rightKey: 275
+  jumpKey: 273
   skillKey: 32
   ropeInKey: 122
   ropeOutKey: 120

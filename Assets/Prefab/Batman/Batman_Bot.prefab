@@ -48,7 +48,7 @@ GameObject:
   - component: {fileID: 5124948465142807368}
   m_Layer: 10
   m_Name: Batman_Bot
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -152,6 +152,11 @@ MonoBehaviour:
   launchForceY: 12
   prefab_HookEffect: {fileID: 7164003069826664659, guid: a5e6272d852ff5c438b3d290f831a9b5, type: 3}
   prefab_HookDart: {fileID: 8425751631516492199, guid: ae9077a3729aee24ea53a8b7208c58a7, type: 3}
+  playerLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  slowPercentage: 0.5
+  slowDuration: 30
 --- !u!114 &2464295544296819440
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -262,4 +267,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e41615927af66c04ab125902f714bddd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BatmanBotAI
+  moveSpeed: 5
+  jumpForce: 10
   timeToReleaseHook: 1.2
+  wallDetectDistance: 1
+  obstacleLayer:
+    serializedVersion: 2
+    m_Bits: 0
