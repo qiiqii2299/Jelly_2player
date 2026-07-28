@@ -65,7 +65,7 @@ public class MissileProjectile : MonoBehaviour
         SpriteRenderer sr = GetComponent<SpriteRenderer>();
         if (sr == null) sr = gameObject.AddComponent<SpriteRenderer>();
         sr.sprite       = MakeCircleSprite(32);
-        sr.color        = Color.white;
+        sr.color        = new Color(1f, 0.45f, 0f); // màu cam Ironman
         sr.sortingOrder = 10;
 
         BoxCollider2D box = GetComponent<BoxCollider2D>();
