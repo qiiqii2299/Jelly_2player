@@ -11,6 +11,10 @@ public class MissileProjectile : MonoBehaviour
     public float speed    = 14f;
     public float lifetime = 5f;
 
+    [Header("Hiệu ứng slow khi trúng")]
+    public float slowDuration    = 3f;      // thời gian bị chậm (giây)
+    public float slowMultiplier  = 0.5f;    // tốc độ x 0.5 = chậm 50%
+
     private Vector2    direction;
     private GameObject shooter;
 
@@ -57,6 +61,15 @@ public class MissileProjectile : MonoBehaviour
     void OnTriggerEnter2D(Collider2D other)
     {
         if (shooter != null && other.gameObject == shooter) return;
+
+        // Gây slow nếu trúng Player
+        if (other.CompareTag("Player"))
+        {
+            SlowEffect slow = other.GetComponent<SlowEffect>();
+            if (slow == null) slow = other.gameObject.AddComponent<SlowEffect>();
+            slow.Apply(slowDuration, slowMultiplier);
+        }
+
         Destroy(gameObject);
     }
 

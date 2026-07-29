@@ -142,7 +142,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MissileSkill
   missilePrefab: {fileID: 4280089508693966871, guid: fd7d05448a0c4ab64b3051be6964bef7, type: 3}
   firePoint: {fileID: 2281653232079880012}
-  cooldown: 15
+  cooldown: 1
   maxMissiles: 3
 --- !u!50 &288254944950718792
 Rigidbody2D:
