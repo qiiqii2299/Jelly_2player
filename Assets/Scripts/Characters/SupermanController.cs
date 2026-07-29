@@ -1,13 +1,16 @@
 using UnityEngine;
 
 /// <summary>
-/// Gắn lên Superman cùng với PlayerBase.
-/// Chỉ xử lý kỹ năng laser — di chuyển do PlayerBase đảm nhiệm.
-/// Space → bắn laser đỏ từ mắt theo hướng mặt đang nhìn.
+/// Gắn lên Superman cùng với PlayerBase và FlyCharacter.
+/// - Skill CHÍNH (Space): Bắn laser đỏ từ mắt.
+/// - Skill PHỤ (J/K/LeftShift): Bay lên (xử lý bởi FlyCharacter).
+/// Di chuyển do PlayerBase + FlyCharacter đảm nhiệm.
 /// </summary>
+[RequireComponent(typeof(PlayerBase))]
+[RequireComponent(typeof(FlyCharacter))]
 public class SupermanController : MonoBehaviour
 {
-    [Header("Laser Eyes")]
+    [Header("Laser Eyes (Skill Chính)")]
     [Tooltip("Prefab laser — để trống sẽ tự tạo hình chữ nhật đỏ")]
     public GameObject laserPrefab;
 
@@ -27,6 +30,14 @@ public class SupermanController : MonoBehaviour
     private float cooldownTimer = 0f;
     private bool  isReady       = true;
 
+    private PlayerInputController inputController;
+
+    // -------------------------------------------------------
+    void Start()
+    {
+        inputController = GetComponent<PlayerInputController>();
+    }
+
     void Update()
     {
         if (!isReady)
@@ -39,10 +50,16 @@ public class SupermanController : MonoBehaviour
             }
         }
 
-        if (Input.GetKeyDown(KeyCode.Space) && isReady)
+        // Skill CHÍNH: Bắn laser
+        bool skillPressed = inputController != null
+            ? inputController.IsSkillPressed
+            : Input.GetKeyDown(KeyCode.Space);
+
+        if (skillPressed && isReady)
             FireLaser();
     }
 
+    // -------------------------------------------------------
     void FireLaser()
     {
         Vector2 fireDir  = transform.right;
