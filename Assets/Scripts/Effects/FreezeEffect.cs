@@ -42,12 +42,19 @@ public class FreezeEffect : MonoBehaviour
             pb.SetFrozen(frozen);
         }
 
+        // --- FlyCharacter xử lý Rigidbody + flag chặn input (độc lập với PlayerBase) ---
+        FlyCharacter fc = GetComponent<FlyCharacter>();
+        if (fc != null)
+        {
+            fc.SetFrozen(frozen);
+        }
+
         // --- Chặn các Controller nhân vật (HulkController, SpidermanController,...) ---
         MonoBehaviour[] scripts = GetComponents<MonoBehaviour>();
         foreach (var s in scripts)
         {
             if (s == null || s == this) continue;
-            if (s is PlayerBase || s is PlayerInputController) continue; // PlayerBase đã xử lý riêng
+            if (s is PlayerBase || s is FlyCharacter || s is PlayerInputController) continue;
 
             string typeName = s.GetType().Name;
             if (typeName.Contains("Controller") || typeName.Contains("Skill"))
