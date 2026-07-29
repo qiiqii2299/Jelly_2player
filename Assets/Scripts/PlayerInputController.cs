@@ -8,9 +8,10 @@ public class PlayerInputController : MonoBehaviour
     public PlayerType playerType = PlayerType.Player1;
 
     [Header("Cấu hình phím di chuyển")]
-    public KeyCode leftKey = KeyCode.A;
+    public KeyCode leftKey  = KeyCode.A;
     public KeyCode rightKey = KeyCode.D;
-    public KeyCode jumpKey = KeyCode.W;
+    public KeyCode jumpKey  = KeyCode.W;
+    public KeyCode downKey  = KeyCode.S;
 
     [Header("Cấu hình phím skill (Input)")]
     public KeyCode skillKey = KeyCode.Space;
@@ -31,6 +32,7 @@ public class PlayerInputController : MonoBehaviour
             leftKey           = KeyCode.A;
             rightKey          = KeyCode.D;
             jumpKey           = KeyCode.W;
+            downKey           = KeyCode.S;
             skillKey          = KeyCode.Space;
             secondarySkillKey = KeyCode.J;
             ropeInKey         = KeyCode.Z;
@@ -42,6 +44,7 @@ public class PlayerInputController : MonoBehaviour
             leftKey           = KeyCode.LeftArrow;
             rightKey          = KeyCode.RightArrow;
             jumpKey           = KeyCode.UpArrow;
+            downKey           = KeyCode.DownArrow;
             skillKey          = KeyCode.Keypad0;
             secondarySkillKey = KeyCode.Keypad4;
             ropeInKey         = KeyCode.Keypad1;
@@ -59,9 +62,11 @@ public class PlayerInputController : MonoBehaviour
     }
 
     // Thuộc tính di chuyển để PlayerBase đọc vào
-    public bool IsLeftHeld => Input.GetKey(leftKey);
+    public bool IsLeftHeld  => Input.GetKey(leftKey);
     public bool IsRightHeld => Input.GetKey(rightKey);
     public bool IsJumpPressed => Input.GetKeyDown(jumpKey);
+    public bool IsUpHeld    => Input.GetKey(jumpKey);
+    public bool IsDownHeld  => Input.GetKey(downKey);
 
     // Thuộc tính skill
     public bool IsSkillPressed => Input.GetKeyDown(skillKey);
