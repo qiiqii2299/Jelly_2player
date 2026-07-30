@@ -2,25 +2,17 @@ using System.Collections;
 using UnityEngine;
 
 /// <summary>
-/// Gắn tạm lên Player khi bị trúng khiên Captain America.
-/// Freeze nhân vật (đứng yên) trong duration giây rồi tự gỡ.
-/// Tự xử lý nếu bị Apply nhiều lần — reset lại timer.
+/// Gắn tạm lên Player khi bị trúng chiêu gây choáng (Hulk đấm, Captain America khiên,...)
+/// Bất động nhân vật trong duration giây rồi tự gỡ.
+/// Nếu bị Apply nhiều lần thì reset lại timer.
 /// </summary>
 public class FreezeEffect : MonoBehaviour
 {
-    private Rigidbody2D  rb;
-    private Coroutine    freezeRoutine;
-    private float        savedGravity;
-    private bool         isFrozen = false;
-
-    void Awake()
-    {
-        rb = GetComponent<Rigidbody2D>();
-    }
+    private Coroutine freezeRoutine;
 
     /// <summary>
-    /// Gọi từ ShieldProjectile khi trúng Player.
-    /// Nếu đang bị freeze rồi thì reset lại thời gian.
+    /// Gọi từ bất kỳ skill nào muốn gây choáng.
+    /// Nếu đang bị freeze thì reset lại thời gian.
     /// </summary>
     public void Apply(float duration)
     {
@@ -32,52 +24,41 @@ public class FreezeEffect : MonoBehaviour
 
     IEnumerator FreezeRoutine(float duration)
     {
-        // --- Bắt đầu freeze ---
-        isFrozen = true;
-
-        if (rb != null)
-        {
-            savedGravity        = rb.gravityScale;
-            rb.gravityScale     = 0f;
-            rb.linearVelocity   = Vector2.zero;
-            rb.constraints      = RigidbodyConstraints2D.FreezeAll;
-        }
-
-        // Disable PlayerBase và các controller để nhân vật không tự di chuyển
-        SetControllersEnabled(false);
+        SetFrozenState(true);
 
         yield return new WaitForSeconds(duration);
 
-        // --- Kết thúc freeze ---
-        if (rb != null)
-        {
-            rb.gravityScale = savedGravity;
-            rb.constraints  = RigidbodyConstraints2D.FreezeRotation; // chỉ giữ không xoay
-        }
+        SetFrozenState(false);
 
-        SetControllersEnabled(true);
-        isFrozen = false;
-
-        // Tự xóa component khỏi target khi xong
         Destroy(this);
     }
 
-    void SetControllersEnabled(bool enabled)
+    void SetFrozenState(bool frozen)
     {
-        // Disable/Enable PlayerBase để ngăn di chuyển
+        // --- PlayerBase xử lý Rigidbody + flag chặn input ---
         PlayerBase pb = GetComponent<PlayerBase>();
-        if (pb != null) pb.enabled = enabled;
+        if (pb != null)
+        {
+            pb.SetFrozen(frozen);
+        }
 
-        // Disable/Enable các controller nhân vật khác nếu có
+        // --- FlyCharacter xử lý Rigidbody + flag chặn input (độc lập với PlayerBase) ---
+        FlyCharacter fc = GetComponent<FlyCharacter>();
+        if (fc != null)
+        {
+            fc.SetFrozen(frozen);
+        }
+
+        // --- Chặn các Controller nhân vật (HulkController, SpidermanController,...) ---
         MonoBehaviour[] scripts = GetComponents<MonoBehaviour>();
         foreach (var s in scripts)
         {
-            if (s == this) continue;
-            if (s is PlayerBase) continue; // đã xử lý ở trên
-            // Chỉ disable các script có tên chứa "Controller" hoặc "Skill"
+            if (s == null || s == this) continue;
+            if (s is PlayerBase || s is FlyCharacter || s is PlayerInputController) continue;
+
             string typeName = s.GetType().Name;
             if (typeName.Contains("Controller") || typeName.Contains("Skill"))
-                s.enabled = enabled;
+                s.enabled = !frozen;
         }
     }
 }
