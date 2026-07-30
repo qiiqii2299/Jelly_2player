@@ -10,7 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1306355404028657420}
   - component: {fileID: 1485298691569312221}
-  - component: {fileID: 8842260508894177040}
   - component: {fileID: 6219069068101310659}
   - component: {fileID: 5158990757609076614}
   - component: {fileID: 1202848006191454070}
@@ -97,35 +96,6 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
---- !u!114 &8842260508894177040
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7237262902726714271}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 534513f678662c7e295ade0e5c248573, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GrapplingHook
-  hookOrigin: {fileID: 3203194473236710713}
-  maxDistance: 10
-  minDistance: 2
-  hookLayer:
-    serializedVersion: 2
-    m_Bits: 256
-  scanAngle: 40
-  climbSpeed: 5
-  launchForceX: 10
-  launchForceY: 12
-  prefab_HookEffect: {fileID: 7164003069826664659, guid: a5e6272d852ff5c438b3d290f831a9b5, type: 3}
-  prefab_HookDart: {fileID: 8425751631516492199, guid: ae9077a3729aee24ea53a8b7208c58a7, type: 3}
-  playerLayer:
-    serializedVersion: 2
-    m_Bits: 0
-  slowPercentage: 0.5
-  slowDuration: 30
 --- !u!114 &6219069068101310659
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -140,7 +110,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::NewMonoBehaviourScript
   moveSpeed: 5
   jumpForce: 5
-  isAutoRun: 0
   groundCheck: {fileID: 1306355404028657420}
   groundCheckRadius: 0.2
   groundLayer:
@@ -237,10 +206,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   playerType: 2
-  leftKey: 276
-  rightKey: 275
-  jumpKey: 273
+  leftKey: 97
+  rightKey: 100
+  jumpKey: 119
+  downKey: 115
   skillKey: 32
+  secondarySkillKey: 106
   ropeInKey: 122
   ropeOutKey: 120
 --- !u!1 &8871717658368677654
