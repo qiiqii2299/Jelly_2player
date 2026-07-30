@@ -2,156 +2,220 @@ using UnityEngine;
 
 public class BatmanController : PlayerBase
 {
-    [Header("Cấu hình Đu dây")]
-    public Transform firePoint;
+    [Header("Cấu hình Móc câu")]
+    public Transform  firePoint;
     public GameObject sideEffectPrefab;
     public GameObject dartPrefab;
 
-    [Header("Vật lý dây móc")]
+    [Header("Tầm bắn & Góc quét")]
     public float maxGrappleDistance = 15f;
+    public float minGrappleDistance = 2f;
+    [Tooltip("Góc lệch so với thẳng đứng, nghiêng về phía mặt nhân vật (độ)")]
+    public float scanAngle  = 40f;
     public LayerMask grappleLayer;
 
-    [Header("Điều khiển khi đu dây")]
-    public float climbSpeed = 4f;      // Tốc độ tự động thu ngắn dây
-    public float swingForce = 20f;     // Lực đẩy qua lại khi bấm phím
-    public float minRopeLength = 1.5f; // Chiều dài dây ngắn nhất
+    [Header("Kéo về điểm bám")]
+    public float pullSpeed        = 15f;
+    public float arrivalThreshold = 0.4f;
 
-    private DistanceJoint2D distanceJoint;
-    private LineRenderer lineRenderer;
-    private GameObject activeDart;
-
-    // Cờ kiểm soát chống lỗi kẹt dây khi nhả chuột quá nhanh
-    private bool isAttemptingGrapple = false;
+    // ---- nội bộ ----
+    private LineRenderer lr;
+    private GameObject   activeDart;
+    private Vector2      hookPoint;
+    private bool         hasTarget = false;
+    private float        facingX   = 1f;
 
     protected override void Start()
     {
         base.Start();
-        distanceJoint = GetComponent<DistanceJoint2D>();
-        lineRenderer = GetComponent<LineRenderer>();
+        SetupLineRenderer();
     }
 
+    // -------------------------------------------------------
+    void SetupLineRenderer()
+    {
+        lr = GetComponent<LineRenderer>();
+        if (lr == null) lr = gameObject.AddComponent<LineRenderer>();
+
+        lr.positionCount = 2;
+        lr.startWidth    = 0.06f;
+        lr.endWidth      = 0.06f;
+        lr.sortingOrder  = 10;
+
+        if (lr.sharedMaterial == null || lr.sharedMaterial.name.Contains("Default-Line"))
+        {
+            lr.material    = new Material(Shader.Find("Sprites/Default"));
+            lr.startColor  = new Color(0.7f, 0.7f, 0.7f);
+            lr.endColor    = new Color(0.4f, 0.4f, 0.4f);
+        }
+
+        lr.enabled = false;
+    }
+
+    // -------------------------------------------------------
     protected override void HandleSkillInput()
     {
-        // 1. LUÔN LẮNG NGHE SỰ KIỆN BUÔNG TAY: Dù đang đu hay không, thả chuột là ngắt dây ngay lập tức
-        if (Input.GetMouseButtonUp(0))
-        {
-            isAttemptingGrapple = false;
-            StopGrapple();
-            return;
-        }
+        bool skillPressed = inputController != null
+            ? inputController.IsSkillPressed
+            : Input.GetKeyDown(KeyCode.Space);
 
-        // 2. NẾU ĐANG ĐU DÂY: Xử lý thu dây, đánh đu và nhảy thoát bằng Space
+        // ---- Đang kéo về điểm bám ----
         if (isGrappling)
         {
-            // Tự động thu ngắn dây kéo nhân vật lên
-            if (distanceJoint.distance > minRopeLength)
-            {
-                distanceJoint.distance -= climbSpeed * Time.deltaTime;
-            }
+            rb.bodyType    = RigidbodyType2D.Dynamic;
+            rb.constraints = RigidbodyConstraints2D.FreezeRotation;
 
-            // Đánh đu qua lại bằng phím A/D hoặc mũi tên trái/phải
-            float swingInput = Input.GetAxisRaw("Horizontal");
-            if (swingInput != 0)
-            {
-                rb.AddForce(new Vector2(swingInput * swingForce, 0f));
+            PullTowardHook();
 
-                // Xoay mặt nhân vật theo hướng văng
-                if (swingInput > 0)
-                    transform.rotation = Quaternion.Euler(0, 0, 0);
-                else if (swingInput < 0)
-                    transform.rotation = Quaternion.Euler(0, 180, 0);
-            }
-
-            // Bấm Space để cắt dây và tung người nhảy vọt lên cao bám vào bờ gạch
-            if (Input.GetKeyDown(KeyCode.Space))
-            {
-                isAttemptingGrapple = false;
-                StopGrapple();
-                rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
-            }
+            // Bấm skill trong lúc kéo → thả móc ngay
+            if (skillPressed)
+                StopGrapple(true);
 
             return;
         }
 
-        // 3. NẾU CHƯA ĐU DÂY: Xử lý bấm giữ chuột để ném phi tiêu
-        if (Input.GetMouseButtonDown(0))
-        {
-            isAttemptingGrapple = true;
-            anim.SetTrigger("Throw");
-        }
+        // ---- Chưa bắn: scan mỗi frame tìm điểm bám ----
+        ScanForTarget();
+
+        // Bấm skill + có target → bắn
+        if (skillPressed && hasTarget)
+            ShootHook();
     }
 
-    // Gọi qua Animation Event tại frame vung tay xa nhất
-    public void ExecuteThrow()
+    // -------------------------------------------------------
+    // Scan hướng lên trên nghiêng theo hướng mặt — giống GrabblingHook
+    // -------------------------------------------------------
+    void ScanForTarget()
     {
-        // Hủy bắn dây nếu người chơi đã buông chuột trước khi hoạt ảnh ném kết thúc
-        if (!isAttemptingGrapple) return;
+        Vector2 origin = firePoint != null
+            ? (Vector2)firePoint.position
+            : (Vector2)transform.position;
 
-        Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        Vector2 fireDirection = (mousePos - (Vector2)firePoint.position).normalized;
-        RaycastHit2D hit = Physics2D.Raycast(firePoint.position, fireDirection, maxGrappleDistance, grappleLayer);
+        facingX = transform.right.x > 0f ? 1f : -1f;
 
-        if (hit.collider != null)
+        float   rad     = scanAngle * Mathf.Deg2Rad;
+        Vector2 scanDir = new Vector2(Mathf.Sin(rad) * facingX, Mathf.Cos(rad)).normalized;
+
+        RaycastHit2D hit = grappleLayer != 0
+            ? Physics2D.Raycast(origin, scanDir, maxGrappleDistance, grappleLayer)
+            : Physics2D.Raycast(origin, scanDir, maxGrappleDistance);
+
+        if (hit.collider != null
+            && hit.collider.gameObject != gameObject
+            && Vector2.Distance(origin, hit.point) >= minGrappleDistance)
         {
-            StartGrapple(hit.point);
-        }
-    }
-
-    private void StartGrapple(Vector2 hitPoint)
-    {
-        // Bật cờ trạng thái để báo cho PlayerBase ngừng chạy tự động
-        isGrappling = true;
-
-        // Sinh effect tại điểm trúng (phi tiêu)
-        if (sideEffectPrefab != null)
-        {
-            Instantiate(sideEffectPrefab, hitPoint, Quaternion.identity);
-        }
-
-        // Bật vật lý Distance Joint
-        distanceJoint.enabled = true;
-        distanceJoint.connectedAnchor = hitPoint;
-        distanceJoint.distance = Vector2.Distance(firePoint.position, hitPoint) * 0.8f;
-
-        // Bật hình ảnh dây
-        lineRenderer.enabled = true;
-
-        // Sinh phi tiêu
-        if (activeDart == null)
-        {
-            activeDart = Instantiate(dartPrefab, hitPoint, Quaternion.identity);
+            hasTarget = true;
+            hookPoint = hit.point;
         }
         else
         {
-            activeDart.transform.position = hitPoint;
-            activeDart.SetActive(true);
+            hasTarget = false;
         }
     }
 
-    private void StopGrapple()
+    // -------------------------------------------------------
+    void ShootHook()
     {
-        // Tắt cờ trạng thái để PlayerBase tiếp tục chạy tự động
-        isGrappling = false;
+        isGrappling = true;
 
-        if (distanceJoint != null && distanceJoint.enabled)
+        rb.bodyType    = RigidbodyType2D.Dynamic;
+        rb.constraints = RigidbodyConstraints2D.FreezeRotation;
+
+        // Hiệu ứng tại điểm bám
+        if (sideEffectPrefab != null)
         {
-            distanceJoint.enabled = false;
-            lineRenderer.enabled = false;
+            GameObject fx = Instantiate(sideEffectPrefab, hookPoint, Quaternion.identity);
+            Destroy(fx, 0.5f);
+        }
 
-            if (activeDart != null)
+        // Dart tại điểm bám
+        if (dartPrefab != null)
+        {
+            if (activeDart == null)
+                activeDart = Instantiate(dartPrefab, hookPoint, Quaternion.identity);
+            else
             {
-                activeDart.SetActive(false);
+                activeDart.transform.position = hookPoint;
+                activeDart.SetActive(true);
             }
         }
+
+        lr.enabled = true;
+        UpdateLine();
     }
 
-    private void LateUpdate()
+    // -------------------------------------------------------
+    // Kéo Batman thẳng về hookPoint
+    // -------------------------------------------------------
+    void PullTowardHook()
     {
-        // Cập nhật vị trí 2 đầu dây liên tục khi đang đu
-        if (lineRenderer.enabled)
+        Vector2 pos  = transform.position;
+        Vector2 dir  = (hookPoint - pos).normalized;
+        float   dist = Vector2.Distance(pos, hookPoint);
+
+        rb.gravityScale   = 0f;
+        rb.linearVelocity = dir * pullSpeed;
+
+        UpdateLine();
+
+        if (dist <= arrivalThreshold)
+            StopGrapple(false);
+    }
+
+    // -------------------------------------------------------
+    void StopGrapple(bool keepVelocity)
+    {
+        isGrappling = false;
+        hasTarget   = false;
+
+        rb.gravityScale = 1f;
+        rb.constraints  = RigidbodyConstraints2D.FreezeRotation;
+
+        if (!keepVelocity)
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
+
+        lr.enabled = false;
+
+        if (activeDart != null)
+            activeDart.SetActive(false);
+    }
+
+    // -------------------------------------------------------
+    void UpdateLine()
+    {
+        if (!lr.enabled) return;
+        Vector2 start = firePoint != null
+            ? (Vector2)firePoint.position
+            : (Vector2)transform.position;
+        lr.SetPosition(0, start);
+        lr.SetPosition(1, hookPoint);
+    }
+
+    protected new void OnCollisionEnter2D(Collision2D collision)
+    {
+        base.OnCollisionEnter2D(collision);
+        if (isGrappling && collision.contacts[0].normal.y > 0.5f)
+            StopGrapple(false);
+    }
+
+    // Gizmo: vẽ tia scan để thấy tầm bắn trong Scene
+    private void OnDrawGizmosSelected()
+    {
+        Vector2 origin = firePoint != null
+            ? (Vector2)firePoint.position
+            : (Vector2)transform.position;
+
+        float   fx      = Application.isPlaying ? facingX : (transform.right.x > 0f ? 1f : -1f);
+        float   rad     = scanAngle * Mathf.Deg2Rad;
+        Vector2 scanDir = new Vector2(Mathf.Sin(rad) * fx, Mathf.Cos(rad)).normalized;
+
+        Gizmos.color = hasTarget ? Color.green : Color.yellow;
+        Gizmos.DrawRay(origin, scanDir * maxGrappleDistance);
+
+        if (hasTarget)
         {
-            lineRenderer.SetPosition(0, firePoint.position);
-            lineRenderer.SetPosition(1, distanceJoint.connectedAnchor);
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawWireSphere(hookPoint, 0.2f);
         }
     }
 }
