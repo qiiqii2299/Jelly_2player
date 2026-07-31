@@ -14,9 +14,11 @@ public class LaserProjectile : MonoBehaviour
     [Header("Vụ nổ")]
     [Tooltip("Tag của vật thể kích hoạt nổ — mặc định Ground và Player")]
     public string[] explodeOnTags = { "Ground", "Player" };
-    public GameObject explosionPrefab;      // để trống → tự tạo hình tròn vàng
+    public GameObject explosionPrefab;
     public float      explosionRadius = 2f;
     public float      knockbackForce  = 10f;
+    [Header("Hiệu ứng hất tung")]
+    public float knockupForce = 10f;
 
     private Vector2    direction;
     private GameObject shooter;
@@ -113,6 +115,7 @@ public class LaserProjectile : MonoBehaviour
 
             Vector2 pushDir = ((Vector2)col.transform.position - (Vector2)transform.position).normalized;
             targetRb.AddForce(pushDir * knockbackForce, ForceMode2D.Impulse);
+            KnockupEffect.Apply(col.gameObject, knockupForce);
         }
 
         Destroy(gameObject);
