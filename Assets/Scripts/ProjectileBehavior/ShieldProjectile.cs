@@ -21,6 +21,7 @@ public class ShieldProjectile : MonoBehaviour
     [HideInInspector] public float      returnSpeed  = 12f;
     [HideInInspector] public float      maxDistance  = 6f;
     [HideInInspector] public float      freezeDuration = 1f;
+    [HideInInspector] public float      shieldBoostForce = 18f; // lực nhảy tăng cường khi đạp khiên
 
     // -------------------------------------------------------
     // Internal
@@ -95,6 +96,20 @@ public class ShieldProjectile : MonoBehaviour
         // Về đến nơi → tự hủy
         if (toOwner.magnitude < 0.3f)
         {
+            // Nếu captain đang trên không → hất lên cao
+            Rigidbody2D ownerRb = owner.GetComponent<Rigidbody2D>();
+            if (ownerRb != null)
+            {
+                PlayerBase pb = owner.GetComponent<PlayerBase>();
+                bool isAirborne = pb != null ? !pb.IsGrounded() : ownerRb.linearVelocity.y != 0f;
+
+                if (isAirborne)
+                {
+                    ownerRb.linearVelocity = new Vector2(ownerRb.linearVelocity.x, shieldBoostForce);
+                    Debug.Log("[Shield] Khiên về tay — hất captain lên cao!");
+                }
+            }
+
             Destroy(gameObject);
             return;
         }
@@ -109,20 +124,40 @@ public class ShieldProjectile : MonoBehaviour
     void OnTriggerEnter2D(Collider2D other)
     {
         if (hasHit) return;
-        if (owner != null && other.gameObject == owner) return;
+
+        // ---- Va chạm với owner (Captain America) ----
+        if (owner != null && other.gameObject == owner)
+        {
+            Rigidbody2D ownerRb = owner.GetComponent<Rigidbody2D>();
+
+            // Owner đang ở trên khiên và đang rơi xuống → boost nhảy
+            bool isJumpingOnShield = ownerRb != null
+                && ownerRb.linearVelocity.y < 0f
+                && owner.transform.position.y > transform.position.y + 0.1f;
+
+            if (isJumpingOnShield && ownerRb != null)
+            {
+                ownerRb.linearVelocity = new Vector2(ownerRb.linearVelocity.x, shieldBoostForce);
+                Debug.Log("[Shield] Boost nhảy!");
+            }
+
+            // Dù có boost hay không, khiên đều về tay ngay
+            Destroy(gameObject);
+            return;
+        }
+
         if (owner != null && other.transform.IsChildOf(owner.transform)) return;
 
         if (other.CompareTag("Player"))
         {
             hasHit = true;
             FreezePlayer(other.gameObject);
-            state  = State.Returning; // trúng rồi → quay về ngay
+            state  = State.Returning;
             return;
         }
 
         if (other.CompareTag("Ground") && state == State.Flying)
         {
-            // Chạm đất → dừng lại rồi quay về
             state = State.Returning;
         }
     }
