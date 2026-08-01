@@ -25,6 +25,7 @@ public class CaptainAmericaController : MonoBehaviour
     public float shieldReturnSpeed = 14f;
     public float maxShieldDistance = 6f;
     public float freezeDuration  = 1f;
+    public float shieldBoostForce = 18f; // lực nhảy tăng cường khi đạp khiên
 
     [Header("Bot Mode")]
     [Tooltip("Tick nếu đây là bot — tắt input bàn phím")]
@@ -95,10 +96,11 @@ public class CaptainAmericaController : MonoBehaviour
         ShieldProjectile shield = shieldObj.GetComponent<ShieldProjectile>();
         if (shield == null) shield = shieldObj.AddComponent<ShieldProjectile>();
 
-        shield.speed          = shieldSpeed;
-        shield.returnSpeed    = shieldReturnSpeed;
-        shield.maxDistance    = maxShieldDistance;
-        shield.freezeDuration = freezeDuration;
+        shield.speed             = shieldSpeed;
+        shield.returnSpeed       = shieldReturnSpeed;
+        shield.maxDistance       = maxShieldDistance;
+        shield.freezeDuration    = freezeDuration;
+        shield.shieldBoostForce  = shieldBoostForce;
         shield.Init(gameObject, fireDir);
 
         // Theo dõi khiên — khi nó bị Destroy thì cho ném lại
