@@ -12,8 +12,11 @@ public class MissileProjectile : MonoBehaviour
     public float lifetime = 5f;
 
     [Header("Hiệu ứng slow khi trúng")]
-    public float slowDuration    = 3f;      // thời gian bị chậm (giây)
-    public float slowMultiplier  = 0.5f;    // tốc độ x 0.5 = chậm 50%
+    public float slowDuration    = 3f;
+    public float slowMultiplier  = 0.5f;
+
+    [Header("Hiệu ứng hất tung")]
+    public float knockupForce = 10f;
 
     private Vector2    direction;
     private GameObject shooter;
@@ -68,6 +71,8 @@ public class MissileProjectile : MonoBehaviour
             SlowEffect slow = other.GetComponent<SlowEffect>();
             if (slow == null) slow = other.gameObject.AddComponent<SlowEffect>();
             slow.Apply(slowDuration, slowMultiplier);
+
+            KnockupEffect.Apply(other.gameObject, knockupForce);
         }
 
         Destroy(gameObject);
