@@ -6,14 +6,19 @@ using UnityEngine;
 /// Di chuyển do PlayerBase đảm nhiệm.
 ///
 /// SKILL CHÍNH  — Nhảy Cao (High Jump)
-///   Phím: Space (P1) / LeftShift (P2) — skillKey
+///   Phím: Space (P1) / Keypad0 (P2) — skillKey
 ///   Hulk bật lên với lực = jumpForce * jumpMultiplier
 ///   Cooldown: highJumpCooldown giây
 ///
 /// SKILL PHỤ — Đấm (Punch)
-///   Phím: J (P1) / K (P2) — secondarySkillKey
+///   Phím: J (P1) / Keypad4 (P2) — secondarySkillKey
 ///   Quét OverlapCircle phía trước → bất động đối thủ freezeDuration giây
 ///   Cooldown: punchCooldown giây
+///
+/// SKILL HÓA KHỔNG LỒ — Giant Form
+///   Phím: Z (P1) / Keypad1 (P2) — ropeInKey
+///   Hulk phóng to scale, tăng tốc chạy trong giantDuration giây
+///   Cooldown: giantCooldown giây
 /// </summary>
 [RequireComponent(typeof(PlayerBase))]
 public class HulkController : MonoBehaviour
@@ -47,6 +52,19 @@ public class HulkController : MonoBehaviour
     public GameObject hitEffectPrefab;
 
     // -------------------------------------------------------
+    // SKILL HÓA KHỔNG LỒ: Giant Form
+    // -------------------------------------------------------
+    [Header("Hóa Khổng Lồ (Skill 3 — ropeInKey Z/Keypad1)")]
+    [Tooltip("Hệ số phóng to scale khi hóa khổng lồ")]
+    public float giantScaleMultiplier = 2f;
+    [Tooltip("Hệ số nhân tốc độ chạy khi hóa khổng lồ")]
+    public float giantSpeedMultiplier = 2f;
+    [Tooltip("Thời gian duy trì hình thức khổng lồ (giây)")]
+    public float giantDuration = 3f;
+    [Tooltip("Cooldown giữa 2 lần hóa khổng lồ (giây)")]
+    public float giantCooldown = 10f;
+
+    // -------------------------------------------------------
     // Bot Mode
     // -------------------------------------------------------
     [Header("Bot Mode")]
@@ -57,6 +75,8 @@ public class HulkController : MonoBehaviour
     public bool IsPunchReady => isPunchReady;
     /// Bot đọc để biết cooldown nhảy
     public bool IsHighJumpReady => isHighJumpReady;
+    /// Bot đọc để biết cooldown hóa khổng lồ
+    public bool IsGiantReady => isGiantReady;
 
     // -------------------------------------------------------
     // Internal
@@ -66,6 +86,13 @@ public class HulkController : MonoBehaviour
 
     private float punchTimer = 0f;
     private bool  isPunchReady = true;
+
+    private float giantTimer     = 0f;
+    private bool  isGiantReady   = true;
+    private bool  isGiantActive  = false;
+    private float giantActiveTimer = 0f;
+    private Vector3 originalScale;
+    private float   originalMoveSpeed;
 
     private PlayerInputController inputController;
     private PlayerBase            playerBase;
@@ -77,6 +104,7 @@ public class HulkController : MonoBehaviour
         inputController = GetComponent<PlayerInputController>();
         playerBase      = GetComponent<PlayerBase>();
         rb              = GetComponent<Rigidbody2D>();
+        originalScale   = transform.localScale;
     }
 
     void Update()
@@ -87,6 +115,7 @@ public class HulkController : MonoBehaviour
 
         HandleHighJumpInput();
         HandlePunchInput();
+        HandleGiantInput();
     }
 
     // -------------------------------------------------------
@@ -112,6 +141,24 @@ public class HulkController : MonoBehaviour
                 isPunchReady = true;
                 Debug.Log("[Hulk] Đấm sẵn sàng!");
             }
+        }
+
+        if (!isGiantReady)
+        {
+            giantTimer -= Time.deltaTime;
+            if (giantTimer <= 0f)
+            {
+                isGiantReady = true;
+                Debug.Log("[Hulk] Hóa Khổng Lồ sẵn sàng!");
+            }
+        }
+
+        // Đếm ngược thời gian hiệu ứng đang chạy
+        if (isGiantActive)
+        {
+            giantActiveTimer -= Time.deltaTime;
+            if (giantActiveTimer <= 0f)
+                DeactivateGiant();
         }
     }
 
@@ -143,6 +190,21 @@ public class HulkController : MonoBehaviour
 
         if (punchPressed)
             Punch();
+    }
+
+    // -------------------------------------------------------
+    // Input skill 3: Hóa Khổng Lồ
+    // -------------------------------------------------------
+    void HandleGiantInput()
+    {
+        if (!isGiantReady || isGiantActive) return;
+
+        bool giantPressed = inputController != null
+            ? Input.GetKeyDown(inputController.ropeInKey)
+            : Input.GetKeyDown(KeyCode.Z);
+
+        if (giantPressed)
+            ActivateGiant();
     }
 
     // -------------------------------------------------------
@@ -204,6 +266,45 @@ public class HulkController : MonoBehaviour
         isPunchReady = false;
         punchTimer   = punchCooldown;
         Debug.Log($"[Hulk] Đấm! Cooldown {punchCooldown}s.");
+    }
+
+    // -------------------------------------------------------
+    /// <summary>
+    /// Hóa Khổng Lồ — phóng to scale và tăng tốc chạy trong giantDuration giây.
+    /// Bot AI gọi trực tiếp hàm này.
+    /// </summary>
+    public void ActivateGiant()
+    {
+        if (!isGiantReady || isGiantActive) return;
+        if (playerBase == null) return;
+
+        // Lưu giá trị gốc trước khi thay đổi
+        originalScale     = transform.localScale;
+        originalMoveSpeed = playerBase.moveSpeed;
+
+        // Phóng to và tăng tốc
+        transform.localScale   = originalScale * giantScaleMultiplier;
+        playerBase.moveSpeed   = originalMoveSpeed * giantSpeedMultiplier;
+
+        isGiantActive    = true;
+        giantActiveTimer = giantDuration;
+
+        isGiantReady = false;
+        giantTimer   = giantCooldown;
+
+        Debug.Log($"[Hulk] Hóa Khổng Lồ! Scale x{giantScaleMultiplier}, tốc độ x{giantSpeedMultiplier} trong {giantDuration}s. Cooldown {giantCooldown}s.");
+    }
+
+    void DeactivateGiant()
+    {
+        isGiantActive = false;
+
+        // Khôi phục giá trị gốc
+        transform.localScale = originalScale;
+        if (playerBase != null)
+            playerBase.moveSpeed = originalMoveSpeed;
+
+        Debug.Log("[Hulk] Hết Hóa Khổng Lồ — khôi phục kích thước và tốc độ.");
     }
 
     // -------------------------------------------------------
