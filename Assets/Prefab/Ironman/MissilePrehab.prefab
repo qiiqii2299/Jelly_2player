@@ -45,10 +45,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7e8b81068c5dce7f295ede708ee18020, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MissileProjectile
-  speed: 5
+  speed: 10
   lifetime: 10
   slowDuration: 3
   slowMultiplier: 0.5
+  knockupForce: 6
+  explosionRadius: 0.6
 --- !u!212 &5537896686842437681
 SpriteRenderer:
   serializedVersion: 2

@@ -12,11 +12,15 @@ public class MissileProjectile : MonoBehaviour
     public float lifetime = 5f;
 
     [Header("Hiệu ứng slow khi trúng")]
-    public float slowDuration    = 3f;
-    public float slowMultiplier  = 0.5f;
+    public float slowDuration   = 3f;
+    public float slowMultiplier = 0.5f;
 
     [Header("Hiệu ứng hất tung")]
-    public float knockupForce = 10f;
+    [Tooltip("Thấp hơn superman (laser = 10f), tên lửa nên dùng 6-7f")]
+    public float knockupForce = 6f;
+
+    [Header("Vụ nổ khi trúng")]
+    public float explosionRadius = 0.6f;   // nhỏ hơn của superman
 
     private Vector2    direction;
     private GameObject shooter;
@@ -65,8 +69,16 @@ public class MissileProjectile : MonoBehaviour
     {
         if (shooter != null && other.gameObject == shooter) return;
 
-        // Gây slow nếu trúng Player
-        if (other.CompareTag("Player"))
+        bool hitPlayer = other.CompareTag("Player");
+        bool hitGround = other.CompareTag("Ground");
+
+        if (!hitPlayer && !hitGround) return;
+
+        // Vụ nổ nhỏ tại điểm va chạm
+        SpawnExplosion();
+
+        // Gây slow + hất tung nếu trúng Player
+        if (hitPlayer)
         {
             SlowEffect slow = other.GetComponent<SlowEffect>();
             if (slow == null) slow = other.gameObject.AddComponent<SlowEffect>();
@@ -76,6 +88,22 @@ public class MissileProjectile : MonoBehaviour
         }
 
         Destroy(gameObject);
+    }
+
+    void SpawnExplosion()
+    {
+        GameObject fx = new GameObject("MissileExplosion");
+        fx.transform.position = transform.position;
+
+        SpriteRenderer sr = fx.AddComponent<SpriteRenderer>();
+        sr.sprite       = MakeCircleSprite(64);
+        sr.color        = new Color(1f, 0.55f, 0f, 0.9f); // cam nổ
+        sr.sortingOrder = 15;
+
+        float d = explosionRadius * 2f;
+        fx.transform.localScale = new Vector3(d, d, 1f);
+
+        Destroy(fx, 0.3f);
     }
 
     void BuildVisual()
