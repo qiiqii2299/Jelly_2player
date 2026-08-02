@@ -37,7 +37,7 @@ public class SpiderManController : PlayerBase
             lineRenderer = gameObject.AddComponent<LineRenderer>();
         lineRenderer.enabled = false;
         lineRenderer.startWidth = 0.05f;
-        lineRenderer.endWidth   = 0.05f;
+        lineRenderer.endWidth = 0.05f;
         lineRenderer.positionCount = 2;
 
         animator = GetComponent<Animator>();

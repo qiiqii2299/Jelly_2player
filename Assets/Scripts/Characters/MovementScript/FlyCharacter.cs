@@ -3,13 +3,13 @@ using UnityEngine;
 
 /// <summary>
 /// Gắn kèm với PlayerBase lên nhân vật có khả năng bay.
-/// Kích hoạt khi người chơi bấm skill phụ (IsSecondarySkillPressed).
+/// Kích hoạt khi người chơi bấm skill phụ (IsSecondarySkillPressed hoặc phím Z/X).
 ///
 /// Luồng:
-///   1. Bấm skill phụ → bắt đầu bay (tối đa flyDuration giây).
-///   2. Trong khi bay: điều khiển tự do 4 hướng (Trái/Phải/Lên/Xuống).
-///   3. Hết thời gian bay, trúng Ground, hoặc bấm lại skill phụ → rơi từ từ 3s.
-///   4. PlayerBase.IsFlying = false → PlayerBase tiếp quản trở lại.
+///    1. Bấm skill phụ → bắt đầu bay (tối đa flyDuration giây).
+///    2. Trong khi bay: điều khiển tự do 4 hướng (Trái/Phải/Lên/Xuống).
+///    3. Hết thời gian bay, trúng Ground, hoặc bấm lại skill phụ → rơi từ từ 3s.
+///    4. PlayerBase.IsFlying = false → PlayerBase tiếp quản trở lại.
 /// </summary>
 [RequireComponent(typeof(PlayerBase))]
 public class FlyCharacter : MonoBehaviour
@@ -37,24 +37,24 @@ public class FlyCharacter : MonoBehaviour
     public float flyCooldown = 5f;
 
     // ---- trạng thái ----
-    public bool IsFlying   { get; private set; } = false;
-    public bool IsFalling  { get; private set; } = false;
+    public bool IsFlying { get; private set; } = false;
+    public bool IsFalling { get; private set; } = false;
 
     /// <summary>Thời gian hồi chiêu còn lại. 0 = sẵn sàng.</summary>
     public float CooldownRemaining { get; private set; } = 0f;
 
-    private float flyTimer  = 0f;
+    private float flyTimer = 0f;
     private float fallTimer = 0f;
 
-    private PlayerBase            playerBase;
-    private Rigidbody2D           rb;
+    private PlayerBase playerBase;
+    private Rigidbody2D rb;
     private PlayerInputController inputController;
 
     // -------------------------------------------------------
     void Start()
     {
-        playerBase      = GetComponent<PlayerBase>();
-        rb              = GetComponent<Rigidbody2D>();
+        playerBase = GetComponent<PlayerBase>();
+        rb = GetComponent<Rigidbody2D>();
         inputController = GetComponent<PlayerInputController>();
     }
 
@@ -77,10 +77,10 @@ public class FlyCharacter : MonoBehaviour
                 return;
             }
 
-            // Lắng nghe skill phụ để kích hoạt bay
+            // Lắng nghe skill phụ (Hỗ trợ thêm phím Z và X trực tiếp)
             bool secondaryPressed = inputController != null
                 ? inputController.IsSecondarySkillPressed
-                : Input.GetKeyDown(KeyCode.LeftShift);
+                : (Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.Z) || Input.GetKeyDown(KeyCode.X));
 
             if (secondaryPressed)
                 StartFlying();
@@ -96,7 +96,7 @@ public class FlyCharacter : MonoBehaviour
             // Bấm lại skill phụ → chuyển sang rơi ngay
             bool secondaryPressed = inputController != null
                 ? inputController.IsSecondarySkillPressed
-                : Input.GetKeyDown(KeyCode.LeftShift);
+                : (Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.Z) || Input.GetKeyDown(KeyCode.X));
 
             if (secondaryPressed)
                 BeginGentleFall();
@@ -110,16 +110,16 @@ public class FlyCharacter : MonoBehaviour
     // -------------------------------------------------------
     void StartFlying()
     {
-        IsFlying  = true;
+        IsFlying = true;
         IsFalling = false;
-        flyTimer  = 0f;
+        flyTimer = 0f;
 
         // Báo PlayerBase nhường quyền di chuyển ngang
         playerBase.IsFlying = true;
 
         // Tắt trọng lực — FlyCharacter tự quản lý vật lý
-        rb.gravityScale   = 0f;
-        rb.constraints    = RigidbodyConstraints2D.FreezeRotation;
+        rb.gravityScale = 0f;
+        rb.constraints = RigidbodyConstraints2D.FreezeRotation;
 
         // Đẩy lên khi bắt đầu bay
         rb.linearVelocity = new Vector2(rb.linearVelocity.x, liftForce);
@@ -128,34 +128,44 @@ public class FlyCharacter : MonoBehaviour
     }
 
     // -------------------------------------------------------
+    /// <summary>
+    /// Cho phép các Controller bên ngoài (như SupermanController) gọi kích hoạt bay trực tiếp bằng phím Z/X.
+    /// </summary>
+    public void TriggerFlightExternal()
+    {
+        if (!IsFlying && !IsFalling && CooldownRemaining <= 0f)
+        {
+            StartFlying();
+        }
+    }
+
+    // -------------------------------------------------------
     void HandleFlyMovement()
     {
         // Người chơi điều hướng tự do 4 chiều khi đang bay
         float horizontal = 0f;
-        float vertical   = 0f;
+        float vertical = 0f;
 
         if (inputController != null)
         {
-            if      (inputController.IsRightHeld) horizontal =  1f;
-            else if (inputController.IsLeftHeld)  horizontal = -1f;
+            if (inputController.IsRightHeld) horizontal = 1f;
+            else if (inputController.IsLeftHeld) horizontal = -1f;
 
-            if      (inputController.IsUpHeld)   vertical =  1f;
+            if (inputController.IsUpHeld) vertical = 1f;
             else if (inputController.IsDownHeld) vertical = -1f;
         }
         else
         {
-            if      (Input.GetKey(KeyCode.RightArrow)) horizontal =  1f;
-            else if (Input.GetKey(KeyCode.LeftArrow))  horizontal = -1f;
+            if (Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.D)) horizontal = 1f;
+            else if (Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.A)) horizontal = -1f;
 
-            if      (Input.GetKey(KeyCode.UpArrow))   vertical =  1f;
-            else if (Input.GetKey(KeyCode.DownArrow)) vertical = -1f;
+            if (Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.W)) vertical = 1f;
+            else if (Input.GetKey(KeyCode.DownArrow) || Input.GetKey(KeyCode.S)) vertical = -1f;
         }
 
         rb.linearVelocity = new Vector2(horizontal * flySpeed, vertical * flyVerticalSpeed);
 
-        // Flip sprite theo hướng ngang
-        if      (horizontal > 0f) transform.rotation = Quaternion.Euler(0f,   0f, 0f);
-        else if (horizontal < 0f) transform.rotation = Quaternion.Euler(0f, 180f, 0f);
+        // ĐÃ XÓA: Lệnh lật rotation gây xung đột sprite. Nhường trọn vẹn việc đổi mặt cho SupermanController quản lý.
     }
 
     // -------------------------------------------------------
@@ -171,7 +181,7 @@ public class FlyCharacter : MonoBehaviour
     /// <summary>Chuyển sang trạng thái rơi từ từ — gọi từ hết giờ, trúng Ground, hoặc bấm lại skill phụ.</summary>
     void BeginGentleFall()
     {
-        IsFlying  = false;
+        IsFlying = false;
         IsFalling = true;
         fallTimer = 0f;
         rb.gravityScale = 0f; // tự quản lý trong HandleGentleFall
@@ -187,20 +197,19 @@ public class FlyCharacter : MonoBehaviour
         float horizontal = 0f;
         if (inputController != null)
         {
-            if      (inputController.IsRightHeld) horizontal =  1f;
-            else if (inputController.IsLeftHeld)  horizontal = -1f;
+            if (inputController.IsRightHeld) horizontal = 1f;
+            else if (inputController.IsLeftHeld) horizontal = -1f;
         }
         else
         {
-            if      (Input.GetKey(KeyCode.RightArrow)) horizontal =  1f;
-            else if (Input.GetKey(KeyCode.LeftArrow))  horizontal = -1f;
+            if (Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.D)) horizontal = 1f;
+            else if (Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.A)) horizontal = -1f;
         }
 
         // Rơi từ từ xuống
         rb.linearVelocity = new Vector2(horizontal * flySpeed, -gentleFallSpeed);
 
-        if      (horizontal > 0f) transform.rotation = Quaternion.Euler(0f,   0f, 0f);
-        else if (horizontal < 0f) transform.rotation = Quaternion.Euler(0f, 180f, 0f);
+        // ĐÃ XÓA: Lệnh lật rotation ở đây luôn để tránh xung đột với SupermanController.
 
         // Hết thời gian rơi hoặc đã chạm đất
         bool hitGround = playerBase.IsGrounded();
@@ -211,13 +220,13 @@ public class FlyCharacter : MonoBehaviour
     // -------------------------------------------------------
     void StopFlying()
     {
-        IsFlying  = false;
+        IsFlying = false;
         IsFalling = false;
 
         // Trả lại trọng lực và quyền điều khiển cho PlayerBase
-        rb.gravityScale    = 1f;
-        rb.constraints     = RigidbodyConstraints2D.FreezeRotation;
-        rb.linearVelocity  = new Vector2(rb.linearVelocity.x, 0f);
+        rb.gravityScale = 1f;
+        rb.constraints = RigidbodyConstraints2D.FreezeRotation;
+        rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
 
         playerBase.IsFlying = false;
 
