@@ -1,255 +1,160 @@
-using System.Collections;
 using UnityEngine;
 
 /// <summary>
-/// Gắn lên Hulk cùng với PlayerBase.
-/// Di chuyển do PlayerBase đảm nhiệm.
-///
-/// SKILL CHÍNH  — Nhảy Cao (High Jump)
-///   Phím: Space (P1) / Keypad0 (P2) — skillKey
-///   Hulk bật lên với lực = jumpForce * jumpMultiplier
-///   Cooldown: highJumpCooldown giây
-///
-/// SKILL PHỤ — Đấm (Punch)
-///   Phím: J (P1) / Keypad4 (P2) — secondarySkillKey
-///   Quét OverlapCircle phía trước → bất động đối thủ freezeDuration giây
-///   Cooldown: punchCooldown giây
-///
-/// SKILL HÓA KHỔNG LỒ — Giant Form
-///   Phím: Z (P1) / Keypad1 (P2) — ropeInKey
-///   Hulk phóng to scale, tăng tốc chạy trong giantDuration giây
-///   Cooldown: giantCooldown giây
+/// Gắn lên Hulk cùng với PlayerBase (PlayerBase quản lý di chuyển ngang/nhảy cơ bản).
+/// Đã loại bỏ hoàn toàn Bot Mode, chỉ giữ lại điều khiển và kỹ năng cho người chơi.
+/// Đã sửa lỗi: Giữ nguyên vị trí hiện tại khi hết trạng thái khổng lồ, không bị giật lùi về chỗ cũ.
+/// Đã cập nhật: Phân chia rõ 3 ảnh (Trái, Phải, Chính) dựa theo tốc độ thực tế, không bị lỗi khi tự động di chuyển.
 /// </summary>
 [RequireComponent(typeof(PlayerBase))]
+[RequireComponent(typeof(SpriteRenderer))]
 public class HulkController : MonoBehaviour
 {
-    // -------------------------------------------------------
-    // SKILL CHÍNH: Nhảy Cao
-    // -------------------------------------------------------
-    [Header("Nhảy Cao (Skill Chính — Space/LeftShift)")]
-    [Tooltip("Hệ số nhân lên trên jumpForce của PlayerBase")]
-    public float jumpMultiplier = 2.5f;
-    [Tooltip("Cooldown giữa 2 lần nhảy cao (giây)")]
-    public float highJumpCooldown = 4f;
+    [Header("Cài Đặt Phím Bấm")]
+    public KeyCode jumpKey = KeyCode.Space;
+    public KeyCode punchKey = KeyCode.J;
+    public KeyCode giantKey = KeyCode.Z;
 
-    [Header("Hiệu ứng Nhảy Cao")]
-    [Tooltip("Prefab hiệu ứng khi nhảy — để trống dùng fallback màu xanh lá")]
+    [Header("Hình Ảnh (Sprites)")]
+    [Tooltip("Ảnh mặt chính (kéo image_27ef14.png vào đây)")]
+    public Sprite frontSprite;
+    [Tooltip("Ảnh khi đi sang TRÁI")]
+    public Sprite leftSprite;
+    [Tooltip("Ảnh khi đi sang PHẢI")]
+    public Sprite rightSprite;
+
+    [Header("1. Nhảy Cao")]
+    public float jumpMultiplier = 2.5f;
+    public float highJumpCooldown = 4f;
     public GameObject jumpEffectPrefab;
 
-    // -------------------------------------------------------
-    // SKILL PHỤ: Đấm
-    // -------------------------------------------------------
-    [Header("Đấm (Skill Phụ — J/K)")]
-    [Tooltip("Tầm đấm — bán kính OverlapCircle phía trước mặt")]
+    [Header("2. Đấm")]
     public float punchRange = 1.5f;
-    [Tooltip("Thời gian bất động khi trúng đấm (giây)")]
     public float freezeDuration = 3f;
-    [Tooltip("Cooldown giữa 2 lần đấm (giây)")]
     public float punchCooldown = 5f;
-
-    [Header("Hiệu ứng Đấm")]
-    [Tooltip("Prefab hiệu ứng đấm — để trống dùng fallback hình tròn xanh lá")]
     public GameObject hitEffectPrefab;
 
-    // -------------------------------------------------------
-    // SKILL HÓA KHỔNG LỒ: Giant Form
-    // -------------------------------------------------------
-    [Header("Hóa Khổng Lồ (Skill 3 — ropeInKey Z/Keypad1)")]
-    [Tooltip("Hệ số phóng to scale khi hóa khổng lồ")]
-    public float giantScaleMultiplier = 2f;
-    [Tooltip("Hệ số nhân tốc độ chạy khi hóa khổng lồ")]
+    [Header("3. Hóa Khổng Lồ")]
+    public float giantScaleMultiplier = 1.3f;
     public float giantSpeedMultiplier = 2f;
-    [Tooltip("Thời gian duy trì hình thức khổng lồ (giây)")]
     public float giantDuration = 3f;
-    [Tooltip("Cooldown giữa 2 lần hóa khổng lồ (giây)")]
     public float giantCooldown = 10f;
+    public Sprite giantFormSprite;
 
-    // -------------------------------------------------------
-    // Bot Mode
-    // -------------------------------------------------------
-    [Header("Bot Mode")]
-    [Tooltip("Tick nếu là bot — tắt input bàn phím")]
-    public bool isBot = false;
+    // --- Biến nội bộ (Cooldown & Trạng thái) ---
+    private float highJumpTimer, punchTimer, giantTimer, giantActiveTimer;
+    private bool isHighJumpReady = true;
+    private bool isPunchReady = true;
+    private bool isGiantReady = true;
+    private bool isGiantActive = false;
 
-    /// Bot đọc để biết cooldown đấm
-    public bool IsPunchReady => isPunchReady;
-    /// Bot đọc để biết cooldown nhảy
-    public bool IsHighJumpReady => isHighJumpReady;
-    /// Bot đọc để biết cooldown hóa khổng lồ
-    public bool IsGiantReady => isGiantReady;
-
-    // -------------------------------------------------------
-    // Internal
-    // -------------------------------------------------------
-    private float highJumpTimer = 0f;
-    private bool  isHighJumpReady = true;
-
-    private float punchTimer = 0f;
-    private bool  isPunchReady = true;
-
-    private float giantTimer     = 0f;
-    private bool  isGiantReady   = true;
-    private bool  isGiantActive  = false;
-    private float giantActiveTimer = 0f;
     private Vector3 originalScale;
-    private float   originalMoveSpeed;
+    private float appliedYOffset;
+    private float originalMoveSpeed;
+    private Sprite originalSprite; // Lưu tạm ảnh trước khi khổng lồ
 
-    private PlayerInputController inputController;
-    private PlayerBase            playerBase;
-    private Rigidbody2D           rb;
+    private PlayerBase playerBase;
+    private Rigidbody2D rb;
+    private SpriteRenderer spriteRenderer;
 
-    // -------------------------------------------------------
     void Start()
     {
-        inputController = GetComponent<PlayerInputController>();
-        playerBase      = GetComponent<PlayerBase>();
-        rb              = GetComponent<Rigidbody2D>();
-        originalScale   = transform.localScale;
+        playerBase = GetComponent<PlayerBase>();
+        rb = GetComponent<Rigidbody2D>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
+
+        originalScale = transform.localScale;
+
+        // Bắt đầu game với mặt chính
+        if (frontSprite != null) spriteRenderer.sprite = frontSprite;
     }
 
     void Update()
     {
         TickCooldowns();
 
-        if (isBot) return;
+        // Xử lý Input kỹ năng trực tiếp
+        if (Input.GetKeyDown(jumpKey) && isHighJumpReady) HighJump();
+        if (Input.GetKeyDown(punchKey) && isPunchReady) Punch();
+        if (Input.GetKeyDown(giantKey) && isGiantReady && !isGiantActive) ActivateGiant();
 
-        HandleHighJumpInput();
-        HandlePunchInput();
-        HandleGiantInput();
+        // Cập nhật đổi mặt (Trái/Phải/Chính)
+        UpdateSpriteAppearance();
     }
 
-    // -------------------------------------------------------
-    // Đếm cooldown
-    // -------------------------------------------------------
     void TickCooldowns()
     {
-        if (!isHighJumpReady)
-        {
-            highJumpTimer -= Time.deltaTime;
-            if (highJumpTimer <= 0f)
-            {
-                isHighJumpReady = true;
-                Debug.Log("[Hulk] Nhảy cao sẵn sàng!");
-            }
-        }
+        if (!isHighJumpReady) { highJumpTimer -= Time.deltaTime; if (highJumpTimer <= 0) isHighJumpReady = true; }
+        if (!isPunchReady) { punchTimer -= Time.deltaTime; if (punchTimer <= 0) isPunchReady = true; }
+        if (!isGiantReady) { giantTimer -= Time.deltaTime; if (giantTimer <= 0) isGiantReady = true; }
 
-        if (!isPunchReady)
-        {
-            punchTimer -= Time.deltaTime;
-            if (punchTimer <= 0f)
-            {
-                isPunchReady = true;
-                Debug.Log("[Hulk] Đấm sẵn sàng!");
-            }
-        }
-
-        if (!isGiantReady)
-        {
-            giantTimer -= Time.deltaTime;
-            if (giantTimer <= 0f)
-            {
-                isGiantReady = true;
-                Debug.Log("[Hulk] Hóa Khổng Lồ sẵn sàng!");
-            }
-        }
-
-        // Đếm ngược thời gian hiệu ứng đang chạy
         if (isGiantActive)
         {
             giantActiveTimer -= Time.deltaTime;
-            if (giantActiveTimer <= 0f)
-                DeactivateGiant();
+            if (giantActiveTimer <= 0f) DeactivateGiant();
         }
     }
 
     // -------------------------------------------------------
-    // Input skill chính: Nhảy Cao
+    // QUẢN LÝ HÌNH ẢNH (ĐỔI MẶT)
     // -------------------------------------------------------
-    void HandleHighJumpInput()
+    void UpdateSpriteAppearance()
     {
-        if (!isHighJumpReady) return;
+        // Đang là người khổng lồ thì khóa ảnh tĩnh, không tự đổi
+        if (isGiantActive) return;
 
-        bool skillPressed = inputController != null
-            ? inputController.IsSkillPressed
-            : Input.GetKeyDown(KeyCode.Space);
+        // 1. KHÓA LẬT 1: Tắt flipX mặc định của SpriteRenderer
+        spriteRenderer.flipX = false;
 
-        if (skillPressed)
-            HighJump();
+        // 2. KHÓA LẬT 2: Ép scale X luôn dương (đề phòng script PlayerBase tự động đổi chiều scale)
+        Vector3 fixedScale = transform.localScale;
+        fixedScale.x = Mathf.Abs(originalScale.x);
+        transform.localScale = fixedScale;
+
+        // 3. Lấy vận tốc thực tế (thay vì bắt phím bấm)
+        float speedX = rb.linearVelocity.x;
+
+        // 4. Xử lý đổi ảnh theo hướng đang lướt đi
+        if (speedX < -0.1f)
+        {
+            // Thực tế đang trượt sang trái
+            if (leftSprite != null) spriteRenderer.sprite = leftSprite;
+        }
+        else if (speedX > 0.1f)
+        {
+            // Thực tế đang trượt sang phải
+            if (rightSprite != null) spriteRenderer.sprite = rightSprite;
+        }
+        else
+        {
+            // Vận tốc = 0 (Đứng im hoàn toàn) -> Trở về mặt chính
+            if (frontSprite != null) spriteRenderer.sprite = frontSprite;
+        }
     }
 
     // -------------------------------------------------------
-    // Input skill phụ: Đấm
+    // CÁC KỸ NĂNG
     // -------------------------------------------------------
-    void HandlePunchInput()
-    {
-        if (!isPunchReady) return;
-
-        bool punchPressed = inputController != null
-            ? inputController.IsSecondarySkillPressed
-            : Input.GetKeyDown(KeyCode.J);
-
-        if (punchPressed)
-            Punch();
-    }
-
-    // -------------------------------------------------------
-    // Input skill 3: Hóa Khổng Lồ
-    // -------------------------------------------------------
-    void HandleGiantInput()
-    {
-        if (!isGiantReady || isGiantActive) return;
-
-        bool giantPressed = inputController != null
-            ? Input.GetKeyDown(inputController.ropeInKey)
-            : Input.GetKeyDown(KeyCode.Z);
-
-        if (giantPressed)
-            ActivateGiant();
-    }
-
-    // -------------------------------------------------------
-    /// <summary>
-    /// Nhảy cao — lấy jumpForce từ PlayerBase, nhân hệ số jumpMultiplier.
-    /// Bot AI gọi trực tiếp hàm này.
-    /// </summary>
     public void HighJump()
     {
-        if (!isHighJumpReady) return;
-        if (rb == null || playerBase == null) return;
-
-        float baseJump     = playerBase.jumpForce;
-        float highJumpForce = baseJump * jumpMultiplier;
-
-        // Áp lực đứt khoát lên trên (giữ vận tốc ngang hiện tại)
+        float highJumpForce = playerBase.jumpForce * jumpMultiplier;
         rb.linearVelocity = new Vector2(rb.linearVelocity.x, highJumpForce);
 
-        // Hiệu ứng tại chân Hulk
         SpawnJumpEffect(transform.position);
 
         isHighJumpReady = false;
-        highJumpTimer   = highJumpCooldown;
-        Debug.Log($"[Hulk] Nhảy cao! Lực = {highJumpForce} (base {baseJump} × {jumpMultiplier}). Cooldown {highJumpCooldown}s.");
+        highJumpTimer = highJumpCooldown;
     }
 
-    // -------------------------------------------------------
-    /// <summary>
-    /// Đấm — quét OverlapCircle phía trước, bất động mục tiêu.
-    /// Bot AI gọi trực tiếp hàm này.
-    /// </summary>
     public void Punch()
     {
-        if (!isPunchReady) return;
-
-        Vector2 punchCenter = (Vector2)transform.position
-                            + (Vector2)transform.right * (punchRange * 0.6f);
-
+        Vector2 punchCenter = (Vector2)transform.position + (Vector2)transform.right * (punchRange * 0.6f);
         Collider2D[] hits = Physics2D.OverlapCircleAll(punchCenter, punchRange);
         bool hitAnyone = false;
 
         foreach (var col in hits)
         {
-            if (!col.CompareTag("Player"))    continue;
-            if (col.gameObject == gameObject) continue;
+            if (!col.CompareTag("Player") || col.gameObject == gameObject) continue;
 
             FreezeEffect freeze = col.GetComponent<FreezeEffect>();
             if (freeze == null) freeze = col.gameObject.AddComponent<FreezeEffect>();
@@ -257,138 +162,90 @@ public class HulkController : MonoBehaviour
 
             SpawnHitEffect(col.transform.position);
             hitAnyone = true;
-            Debug.Log($"[Hulk] Đấm trúng {col.gameObject.name} — bất động {freezeDuration}s");
         }
 
-        if (!hitAnyone)
-            SpawnHitEffect(punchCenter);
+        if (!hitAnyone) SpawnHitEffect(punchCenter);
 
         isPunchReady = false;
-        punchTimer   = punchCooldown;
-        Debug.Log($"[Hulk] Đấm! Cooldown {punchCooldown}s.");
+        punchTimer = punchCooldown;
     }
 
-    // -------------------------------------------------------
-    /// <summary>
-    /// Hóa Khổng Lồ — phóng to scale và tăng tốc chạy trong giantDuration giây.
-    /// Bot AI gọi trực tiếp hàm này.
-    /// </summary>
     public void ActivateGiant()
     {
-        if (!isGiantReady || isGiantActive) return;
-        if (playerBase == null) return;
-
-        // Lưu giá trị gốc trước khi thay đổi
-        originalScale     = transform.localScale;
+        originalScale = transform.localScale;
         originalMoveSpeed = playerBase.moveSpeed;
+        originalSprite = spriteRenderer.sprite;
 
-        // Phóng to và tăng tốc
-        transform.localScale   = originalScale * giantScaleMultiplier;
-        playerBase.moveSpeed   = originalMoveSpeed * giantSpeedMultiplier;
+        float originalHeight = spriteRenderer.bounds.size.y;
 
-        isGiantActive    = true;
+        transform.localScale = originalScale * giantScaleMultiplier;
+        playerBase.moveSpeed = originalMoveSpeed * giantSpeedMultiplier;
+
+        if (giantFormSprite != null) spriteRenderer.sprite = giantFormSprite;
+
+        appliedYOffset = (originalHeight / 2f) * (giantScaleMultiplier - 1f);
+        transform.position += new Vector3(0, appliedYOffset, 0);
+
+        isGiantActive = true;
         giantActiveTimer = giantDuration;
-
         isGiantReady = false;
-        giantTimer   = giantCooldown;
-
-        Debug.Log($"[Hulk] Hóa Khổng Lồ! Scale x{giantScaleMultiplier}, tốc độ x{giantSpeedMultiplier} trong {giantDuration}s. Cooldown {giantCooldown}s.");
+        giantTimer = giantCooldown;
     }
 
     void DeactivateGiant()
     {
         isGiantActive = false;
 
-        // Khôi phục giá trị gốc
+        // Phục hồi
+        if (originalSprite != null) spriteRenderer.sprite = originalSprite;
         transform.localScale = originalScale;
-        if (playerBase != null)
-            playerBase.moveSpeed = originalMoveSpeed;
-
-        Debug.Log("[Hulk] Hết Hóa Khổng Lồ — khôi phục kích thước và tốc độ.");
+        playerBase.moveSpeed = originalMoveSpeed;
+        transform.position -= new Vector3(0, appliedYOffset, 0);
     }
 
     // -------------------------------------------------------
-    // Hiệu ứng nhảy cao
+    // HIỆU ỨNG & GIZMOS
     // -------------------------------------------------------
     void SpawnJumpEffect(Vector2 position)
     {
-        GameObject fx;
-
-        if (jumpEffectPrefab != null)
-        {
-            fx = Instantiate(jumpEffectPrefab, position, Quaternion.identity);
-        }
-        else
-        {
-            fx = new GameObject("HulkJumpFX");
-            fx.transform.position = position;
-
-            SpriteRenderer sr = fx.AddComponent<SpriteRenderer>();
-            sr.sprite       = MakeCircleSprite(32);
-            sr.color        = new Color(0.1f, 0.8f, 0.3f, 0.85f); // xanh lá đậm
-            sr.sortingOrder = 20;
-            fx.transform.localScale = Vector3.one * 0.6f;
-        }
-
-        Destroy(fx, 0.3f);
+        if (jumpEffectPrefab != null) Instantiate(jumpEffectPrefab, position, Quaternion.identity);
+        else CreateFallbackFX("HulkJumpFX", position, new Color(0.1f, 0.8f, 0.3f, 0.85f), 0.6f);
     }
 
-    // -------------------------------------------------------
-    // Hiệu ứng đấm
-    // -------------------------------------------------------
     void SpawnHitEffect(Vector2 position)
     {
-        GameObject fx;
+        if (hitEffectPrefab != null) Instantiate(hitEffectPrefab, position, Quaternion.identity);
+        else CreateFallbackFX("HulkHitFX", position, new Color(0.2f, 1f, 0.2f, 0.9f), 0.4f);
+    }
 
-        if (hitEffectPrefab != null)
-        {
-            fx = Instantiate(hitEffectPrefab, position, Quaternion.identity);
-        }
-        else
-        {
-            fx = new GameObject("HulkHitFX");
-            fx.transform.position = position;
-
-            SpriteRenderer sr = fx.AddComponent<SpriteRenderer>();
-            sr.sprite       = MakeCircleSprite(32);
-            sr.color        = new Color(0.2f, 1f, 0.2f, 0.9f);
-            sr.sortingOrder = 20;
-            fx.transform.localScale = Vector3.one * 0.4f;
-        }
-
+    void CreateFallbackFX(string fxName, Vector2 position, Color color, float scale)
+    {
+        GameObject fx = new GameObject(fxName);
+        fx.transform.position = position;
+        SpriteRenderer sr = fx.AddComponent<SpriteRenderer>();
+        sr.sprite = MakeCircleSprite(32);
+        sr.color = color;
+        sr.sortingOrder = 20;
+        fx.transform.localScale = Vector3.one * scale;
         Destroy(fx, 0.3f);
     }
 
-    // -------------------------------------------------------
-    // Tạo sprite hình tròn runtime
-    // -------------------------------------------------------
     Sprite MakeCircleSprite(int size)
     {
-        Texture2D tex    = new Texture2D(size, size, TextureFormat.RGBA32, false);
-        float     radius = size / 2f;
-        Vector2   center = new Vector2(radius, radius);
-
+        Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        float radius = size / 2f;
+        Vector2 center = new Vector2(radius, radius);
         for (int x = 0; x < size; x++)
             for (int y = 0; y < size; y++)
-                tex.SetPixel(x, y,
-                    Vector2.Distance(new Vector2(x, y), center) <= radius
-                    ? Color.white : Color.clear);
-
+                tex.SetPixel(x, y, Vector2.Distance(new Vector2(x, y), center) <= radius ? Color.white : Color.clear);
         tex.Apply();
         return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
     }
 
-    // -------------------------------------------------------
-    // Gizmos
-    // -------------------------------------------------------
     void OnDrawGizmosSelected()
     {
-        // Vùng đấm
-        Vector2 punchCenter = (Vector2)transform.position
-                            + (Vector2)transform.right * (punchRange * 0.6f);
+        Vector2 punchCenter = (Vector2)transform.position + (Vector2)transform.right * (punchRange * 0.6f);
         Gizmos.color = new Color(0.2f, 1f, 0.2f, 0.4f);
         Gizmos.DrawWireSphere(punchCenter, punchRange);
-        Gizmos.color = Color.green;
-        Gizmos.DrawLine(transform.position, punchCenter);
     }
 }

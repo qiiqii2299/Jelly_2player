@@ -14,17 +14,17 @@ public class PlayerBase : MonoBehaviour
     public float groundCheckRadius = 0.2f;
     public LayerMask groundLayer;
 
-    [Header("Bám tường")]
+    [Header("Bám tường (Đã tối ưu)")]
     public float wallCheckDistance = 0.6f;
-    public float wallSlideSpeed    = 1.5f;
-    public float wallGrabDuration  = 1f;
-    public float wallJumpForceX    = 7f;
-    public float wallJumpForceY    = 10f;
+    public float wallSlideSpeed = 1.5f; // Tốc độ trượt xuống
+    // Đã bỏ wallGrabDuration vì không cần bắt người chơi chờ nữa
+    public float wallJumpForceX = 7f;
+    public float wallJumpForceY = 10f;
 
     // ---- trạng thái nội bộ ----
     protected bool isGrounded;
     protected bool isGrappling = false;
-    private   bool canJump     = true;
+    private bool canJump = true;
 
     // Được FlyCharacter set để PlayerBase nhường quyền điều khiển
     public bool IsFlying { get; set; } = false;
@@ -32,21 +32,19 @@ public class PlayerBase : MonoBehaviour
     // Flag bất động — FreezeEffect set để chặn toàn bộ input/movement
     public bool IsFrozen { get; private set; } = false;
 
-    private bool  isOnWall       = false;
-    private bool  isWallGrabbing = false;
-    private bool  isWallSliding  = false;
-    private float wallGrabTimer  = 0f;
-    private float wallSide       = 0f;   // 1 = tường phải, -1 = tường trái
+    private bool isOnWall = false;
+    private bool isWallSliding = false;
+    private float wallSide = 0f;   // 1 = tường phải, -1 = tường trái
 
-    protected Rigidbody2D           rb;
-    protected Animator              anim;
+    protected Rigidbody2D rb;
+    protected Animator anim;
     protected PlayerInputController inputController;
 
     // -------------------------------------------------------
     virtual protected void Start()
     {
-        rb              = GetComponent<Rigidbody2D>();
-        anim            = GetComponent<Animator>();
+        rb = GetComponent<Rigidbody2D>();
+        anim = GetComponent<Animator>();
         inputController = GetComponent<PlayerInputController>();
     }
 
@@ -65,13 +63,12 @@ public class PlayerBase : MonoBehaviour
 
         if (isGrappling) return;
 
-        HandleWallGrab();
+        HandleWallSlide();
         HandleMovement();
         HandleJump();
     }
 
     // -------------------------------------------------------
-    /// <summary>Trả về trạng thái chạm đất — FlyCharacter dùng để biết khi nào hạ cánh.</summary>
     public bool IsGrounded() => isGrounded;
 
     // -------------------------------------------------------
@@ -89,7 +86,7 @@ public class PlayerBase : MonoBehaviour
             if (rb.linearVelocity.y < 0)
                 rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
 
-            ExitWallGrab();
+            isWallSliding = false;
         }
     }
 
@@ -100,87 +97,69 @@ public class PlayerBase : MonoBehaviour
 
         LayerMask mask = groundLayer != 0 ? groundLayer : Physics2D.AllLayers;
         bool wallRight = Physics2D.Raycast(transform.position, Vector2.right, wallCheckDistance, mask);
-        bool wallLeft  = Physics2D.Raycast(transform.position, Vector2.left,  wallCheckDistance, mask);
+        bool wallLeft = Physics2D.Raycast(transform.position, Vector2.left, wallCheckDistance, mask);
 
-        if      (wallRight) { isOnWall = true; wallSide =  1f; }
-        else if (wallLeft)  { isOnWall = true; wallSide = -1f; }
-        else                { isOnWall = false; }
-
-        if (!isOnWall) ExitWallGrab();
+        if (wallRight) { isOnWall = true; wallSide = 1f; }
+        else if (wallLeft) { isOnWall = true; wallSide = -1f; }
+        else { isOnWall = false; }
     }
 
     // -------------------------------------------------------
-    void HandleWallGrab()
-    {
-        // Bắt đầu bám tường khi chạm tường và đang rơi
-        if (isOnWall && !isGrounded && rb.linearVelocity.y <= 0)
-        {
-            if (!isWallGrabbing && !isWallSliding)
-            {
-                isWallGrabbing = true;
-                wallGrabTimer  = 0f;
-            }
-        }
-
-        if (isWallGrabbing)
-        {
-            wallGrabTimer += Time.deltaTime;
-
-            // Khóa di chuyển, giữ cố định trên tường
-            rb.linearVelocity = Vector2.zero;
-            rb.gravityScale   = 0f;
-
-            if (wallGrabTimer >= wallGrabDuration)
-            {
-                isWallGrabbing = false;
-                isWallSliding  = true;
-                rb.gravityScale = 1f;
-            }
-        }
-
-        if (isWallSliding)
-        {
-            // Trượt xuống từ từ, không cho di chuyển ngang
-            rb.linearVelocity = new Vector2(0f, -wallSlideSpeed);
-        }
-    }
-
+    // THAY THẾ: Cơ chế Trượt Tường mượt mà hơn
     // -------------------------------------------------------
-    void ExitWallGrab()
+    void HandleWallSlide()
     {
-        if (isWallGrabbing || isWallSliding)
+        // Kích hoạt trượt tường khi chạm tường, không chạm đất và đang có xu hướng rơi
+        if (isOnWall && !isGrounded && rb.linearVelocity.y < 0)
         {
-            isWallGrabbing  = false;
-            isWallSliding   = false;
-            rb.gravityScale = 1f;
-            canJump         = true;
+            isWallSliding = true;
+
+            // Hãm tốc độ rơi xuống bằng wallSlideSpeed (Mathf.Max giúp nhân vật không rơi quá nhanh)
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, Mathf.Max(rb.linearVelocity.y, -wallSlideSpeed));
+        }
+        else
+        {
+            isWallSliding = false;
         }
     }
 
     // -------------------------------------------------------
     protected void HandleMovement()
     {
-        // Khi đang bám/trượt tường — khóa hoàn toàn di chuyển ngang
-        if (isWallGrabbing || isWallSliding) return;
-
-        // Kiểm tra input trái/phải để đổi hướng
+        // 1. Nhận input thực tế
+        float inputX = 0f;
         if (inputController != null)
         {
-            if      (inputController.IsRightHeld) currentDirection =  1f;
-            else if (inputController.IsLeftHeld)  currentDirection = -1f;
+            if (inputController.IsRightHeld) inputX = 1f;
+            else if (inputController.IsLeftHeld) inputX = -1f;
         }
         else
         {
-            if      (Input.GetKey(KeyCode.RightArrow)) currentDirection =  1f;
-            else if (Input.GetKey(KeyCode.LeftArrow))  currentDirection = -1f;
+            if (Input.GetKey(KeyCode.RightArrow)) inputX = 1f;
+            else if (Input.GetKey(KeyCode.LeftArrow)) inputX = -1f;
         }
 
-        // Tự động di chuyển theo hướng hiện tại
-        rb.linearVelocity = new Vector2(currentDirection * moveSpeed, rb.linearVelocity.y);
+        // Cập nhật hướng nếu có phím bấm
+        if (inputX != 0) currentDirection = inputX;
 
-        // Flip sprite
-        if      (currentDirection > 0f) transform.rotation = Quaternion.Euler(0f,   0f, 0f);
-        else if (currentDirection < 0f) transform.rotation = Quaternion.Euler(0f, 180f, 0f);
+        // 2. Xử lý logic bám tường và thoát tường
+        if (isWallSliding)
+        {
+            // Nếu người chơi bấm hướng NGƯỢC LẠI với tường -> Thả tay rớt xuống
+            if (inputX == -wallSide)
+            {
+                isWallSliding = false;
+            }
+            else
+            {
+                // Đang trượt tường -> Khóa trục X để bám sát tường, tránh bị vấp
+                rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
+                return; // Dừng logic di chuyển ngang ở đây
+            }
+        }
+
+        // 3. Di chuyển ngang bình thường
+        rb.linearVelocity = new Vector2(currentDirection * moveSpeed, rb.linearVelocity.y);
     }
 
     // -------------------------------------------------------
@@ -192,15 +171,21 @@ public class PlayerBase : MonoBehaviour
 
         if (!jumpPressed) return;
 
-        // Nhảy khỏi tường — input nhảy vẫn hoạt động dù đang bám
-        if (isWallGrabbing || isWallSliding)
+        // 1. Nếu đang trượt tường (hoặc vừa ôm tường) -> Wall Jump
+        if (isWallSliding || isOnWall)
         {
-            ExitWallGrab();
+            isWallSliding = false;
+
+            // Nảy theo hướng ngược lại với bức tường
             rb.linearVelocity = new Vector2(-wallSide * wallJumpForceX, wallJumpForceY);
+
+            // Cập nhật lại hướng di chuyển hiện tại để nhân vật chạy tiếp ra xa tường
+            currentDirection = -wallSide;
             canJump = false;
             return;
         }
 
+        // 2. Nhảy bình thường từ mặt đất
         if (canJump)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
@@ -225,13 +210,13 @@ public class PlayerBase : MonoBehaviour
         if (frozen && rb != null)
         {
             rb.linearVelocity = Vector2.zero;
-            rb.gravityScale   = 0f;
-            rb.constraints    = RigidbodyConstraints2D.FreezeAll;
+            rb.gravityScale = 0f;
+            rb.constraints = RigidbodyConstraints2D.FreezeAll;
         }
         else if (!frozen && rb != null)
         {
             rb.gravityScale = 1f;
-            rb.constraints  = RigidbodyConstraints2D.FreezeRotation;
+            rb.constraints = RigidbodyConstraints2D.FreezeRotation;
         }
     }
 }

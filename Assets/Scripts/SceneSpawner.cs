@@ -27,7 +27,7 @@ public class SceneSpawner : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("Không tìm thấy GameManager trong Scene! Hãy đảm bảo bạn bắt đầu game từ Selection Scene.");
+            // Debug.LogWarning("Không tìm thấy GameManager trong Scene! Hãy đảm bảo bạn bắt đầu game từ Selection Scene.");
         }
     }
 }
